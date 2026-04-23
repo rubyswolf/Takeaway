@@ -1,8 +1,12 @@
 #include "strategy.h"
 
+#include <conio.h>
+#include <cstdlib>
+#include <locale.h>
 #include <stdexcept>
 #include <sstream>
 #include <unordered_map>
+#include <windows.h>
 
 PickedOnMoveNode::PickedOnMoveNode(const IntExpr& move_number) : move_number(move_number) {}
 
@@ -466,6 +470,83 @@ int eval(const IntExpr& expr, const Game& game) {
 }
 
 namespace {
+void configureConsoleForUnicode() {
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+    setlocale(LC_ALL, ".UTF-8");
+}
+
+void clearScreen() {
+    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (console == INVALID_HANDLE_VALUE) {
+        std::system("cls");
+        return;
+    }
+
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    if (!GetConsoleScreenBufferInfo(console, &info)) {
+        std::system("cls");
+        return;
+    }
+
+    const DWORD cellCount = static_cast<DWORD>(info.dwSize.X) * static_cast<DWORD>(info.dwSize.Y);
+    DWORD written = 0;
+    COORD home{ 0, 0 };
+
+    FillConsoleOutputCharacterA(console, ' ', cellCount, home, &written);
+    FillConsoleOutputAttribute(console, info.wAttributes, cellCount, home, &written);
+    SetConsoleCursorPosition(console, home);
+}
+
+void printHistory(const Game& game) {
+    bool isPlayerOnesTurn = true;
+
+    std::cout << "History:\n";
+    if (game.empty()) {
+        std::cout << "  (empty)\n";
+        return;
+    }
+
+    for (Move move : game) {
+        std::cout
+            << "  P" << (isPlayerOnesTurn ? 1 : 2)
+            << ": "
+            << ManipulateMove::toSymbols(game.E, move, isPlayerOnesTurn)
+            << " (" << ManipulateMove::toString(game.E, move) << ")\n";
+        isPlayerOnesTurn = !isPlayerOnesTurn;
+    }
+}
+
+[[noreturn]] void showIllegalMoveErrorAndPause(const Game& position, Move move) {
+    const bool isPlayerOnesTurn = (position.size() % 2 == 0);
+
+    configureConsoleForUnicode();
+    clearScreen();
+    std::cout << "Strategy tried to play an illegal move outside WHILE_LEGAL.\n\n";
+    printHistory(position);
+    std::cout << "\nIllegal move:\n";
+    std::cout
+        << "  P" << (isPlayerOnesTurn ? 1 : 2)
+        << ": "
+        << ManipulateMove::toSymbols(position.E, move, isPlayerOnesTurn)
+        << " (" << ManipulateMove::toString(position.E, move) << ")\n\n";
+    std::cout << "Press any key to continue.";
+    _getch();
+
+    throw std::runtime_error("illegal strategy move outside WHILE_LEGAL");
+}
+
+[[noreturn]] void showNoMatchingMoveErrorAndPause(const Game& position) {
+    configureConsoleForUnicode();
+    clearScreen();
+    std::cout << "No move matched the strategy rules.\n\n";
+    printHistory(position);
+    std::cout << "\nPress any key to continue.";
+    _getch();
+
+    throw std::runtime_error("no move matched the strategy rules");
+}
+
 void throwIfRuleAllowsIllegalMoves(const Rule& rule, const Game& position) {
     if (rule.allow_illegal) {
         return;
@@ -473,7 +554,7 @@ void throwIfRuleAllowsIllegalMoves(const Rule& rule, const Game& position) {
 
     for (Move candidate : position.allMoves()) {
         if (eval(rule.move, position, candidate) && !position.isMoveLegal(candidate)) {
-            throw std::runtime_error("pick: rule matched an illegal move outside WHILE_LEGAL");
+            showIllegalMoveErrorAndPause(position, candidate);
         }
     }
 }
@@ -496,6 +577,10 @@ std::vector<Move> allowedFromCandidates(const Strategy& strategy, const Game& po
         if (!result.empty()) {
             return result;
         }
+    }
+
+    if (!candidates.empty()) {
+        showNoMatchingMoveErrorAndPause(position);
     }
 
     return {};

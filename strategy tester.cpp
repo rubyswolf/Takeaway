@@ -20,6 +20,14 @@ Strategy buildN4WinningStrategy() {
     return builder.finish();
 }
 
+Strategy buildUniversalStrategy() {
+    StrategyBuilder builder;
+
+#include "universal strategy.cpp"
+
+    return builder.finish();
+}
+
 void printCounterexampleLine(const Game& start, const std::vector<Move>& line) {
     Game position = start;
     bool playerOnesTurn = true;
@@ -54,4 +62,6 @@ void testStrategy(const std::string& label, int n, const Strategy& strategy) {
 int main() {
     testStrategy("n=3", 3, buildN3WinningStrategy());
     testStrategy("n=4", 4, buildN4WinningStrategy());
+    testStrategy("universal n=3", 3, buildUniversalStrategy());
+    testStrategy("universal n=4", 4, buildUniversalStrategy());
 }
