@@ -3,14 +3,28 @@
 #include <sstream>
 #include <unordered_map>
 
-PickedOnMoveNode::PickedOnMoveNode(int move_number) : move_number(move_number) {}
+PickedOnMoveNode::PickedOnMoveNode(const IntExpr& move_number) : move_number(move_number) {}
 
 bool PickedOnMoveNode::eval(const Game& game, Element element) const {
-    if (move_number < 1 || move_number > static_cast<int>(game.size())) {
+    const int moveNumber = ::eval(move_number, game);
+
+    if (moveNumber < 1 || moveNumber > static_cast<int>(game.size())) {
         return false;
     }
 
-    return ManipulateMove::hasElement(game[move_number - 1], element);
+    return ManipulateMove::hasElement(game[moveNumber - 1], element);
+}
+
+bool IsSingletonNode::eval(const Game& game, Element element) const {
+    const Move singletonMove = 1 << element;
+
+    for (Move move : game) {
+        if (move == singletonMove) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool AnythingNode::eval(const Game& game, Move move) const {
@@ -123,6 +137,18 @@ bool ExistsElementNode::eval(const Game& game) const {
     return false;
 }
 
+HasBeenPlayedNode::HasBeenPlayedNode(const MoveTest& test) : test(test) {}
+
+bool HasBeenPlayedNode::eval(const Game& game) const {
+    for (Move move : game) {
+        if (::eval(test, game, move)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 CompareIntNode::CompareIntNode(const IntExpr& lhs, const IntExpr& rhs, Comparison op)
     : op(op), lhs(lhs), rhs(rhs) {}
 
@@ -169,6 +195,10 @@ int CurrentMoveNode::eval(const Game& game) const {
     return static_cast<int>(game.size()) + 1;
 }
 
+int PreviousMoveNode::eval(const Game& game) const {
+    return static_cast<int>(game.size());
+}
+
 CountElementsNode::CountElementsNode(const ElementTest& test) : test(test) {}
 
 int CountElementsNode::eval(const Game& game) const {
@@ -184,8 +214,14 @@ int CountElementsNode::eval(const Game& game) const {
 }
 
 ElementTest picked_on_move(int move_number) {
+    return picked_on_move(IntExpr{ std::make_shared<LiteralIntNode>(move_number) });
+}
+
+ElementTest picked_on_move(const IntExpr& move_number) {
     return ElementTest{ std::make_shared<PickedOnMoveNode>(move_number) };
 }
+
+const ElementTest is_singleton = ElementTest{ std::make_shared<IsSingletonNode>() };
 
 ElementTest operator~(const ElementTest& inner) {
     return ElementTest{ std::make_shared<NotElementTestNode>(inner) };
@@ -235,6 +271,10 @@ Condition there_is_an_element(const ElementTest& test) {
     return Condition{ std::make_shared<ExistsElementNode>(test) };
 }
 
+Condition has_been_played(const MoveTest& test) {
+    return Condition{ std::make_shared<HasBeenPlayedNode>(test) };
+}
+
 Condition operator!(const Condition& inner) {
     return Condition{ std::make_shared<NotConditionNode>(inner) };
 }
@@ -280,6 +320,7 @@ IntExpr number_of_elements(const ElementTest& test) {
 }
 
 const IntExpr current_move = IntExpr{ std::make_shared<CurrentMoveNode>() };
+const IntExpr previous_move = IntExpr{ std::make_shared<PreviousMoveNode>() };
 
 ElementTest ElementTestWhenBuilder::otherwise(const ElementTest& b) const {
     return ElementTest{ std::make_shared<SelectElementTestNode>(cond, a, b) };

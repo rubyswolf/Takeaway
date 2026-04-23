@@ -69,9 +69,13 @@ struct IntNode {
 };
 
 struct PickedOnMoveNode : ElementTestNode {
-    int move_number;
+    IntExpr move_number;
 
-    explicit PickedOnMoveNode(int move_number);
+    explicit PickedOnMoveNode(const IntExpr& move_number);
+    bool eval(const Game& game, Element element) const override;
+};
+
+struct IsSingletonNode : ElementTestNode {
     bool eval(const Game& game, Element element) const override;
 };
 
@@ -181,6 +185,13 @@ struct ExistsElementNode : ConditionNode {
     bool eval(const Game& game) const override;
 };
 
+struct HasBeenPlayedNode : ConditionNode {
+    MoveTest test;
+
+    explicit HasBeenPlayedNode(const MoveTest& test);
+    bool eval(const Game& game) const override;
+};
+
 struct CompareIntNode : ConditionNode {
     enum Comparison { EQ, NEQ } op;
 
@@ -235,6 +246,10 @@ struct CurrentMoveNode : IntNode {
     int eval(const Game& game) const override;
 };
 
+struct PreviousMoveNode : IntNode {
+    int eval(const Game& game) const override;
+};
+
 struct CountElementsNode : IntNode {
     ElementTest test;
 
@@ -252,6 +267,8 @@ struct Strategy {
 };
 
 ElementTest picked_on_move(int move_number);
+ElementTest picked_on_move(const IntExpr& move_number);
+extern const ElementTest is_singleton;
 ElementTest operator~(const ElementTest& inner);
 ElementTest operator&(const ElementTest& a, const ElementTest& b);
 ElementTest operator|(const ElementTest& a, const ElementTest& b);
@@ -269,6 +286,7 @@ extern const MoveTest everything;
 Condition true_condition();
 Condition false_condition();
 Condition there_is_an_element(const ElementTest& test);
+Condition has_been_played(const MoveTest& test);
 Condition operator!(const Condition& inner);
 Condition operator&&(const Condition& a, const Condition& b);
 Condition operator||(const Condition& a, const Condition& b);
@@ -279,6 +297,7 @@ Condition operator!=(const Condition& lhs, const Condition& rhs);
 
 IntExpr number_of_elements(const ElementTest& test);
 extern const IntExpr current_move;
+extern const IntExpr previous_move;
 
 struct ElementTestWhenBuilder {
     ElementTest a;
