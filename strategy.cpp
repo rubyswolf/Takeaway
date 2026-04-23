@@ -500,6 +500,7 @@ void clearScreen() {
 
 void printHistory(const Game& game) {
     bool isPlayerOnesTurn = true;
+    int moveNumber = 1;
 
     std::cout << "History:\n";
     if (game.empty()) {
@@ -508,12 +509,9 @@ void printHistory(const Game& game) {
     }
 
     for (Move move : game) {
-        std::cout
-            << "  P" << (isPlayerOnesTurn ? 1 : 2)
-            << ": "
-            << ManipulateMove::toSymbols(game.E, move, isPlayerOnesTurn)
-            << " (" << ManipulateMove::toString(game.E, move) << ")\n";
+        std::cout << "  " << ManipulateMove::moveLine(game.E, move, moveNumber, isPlayerOnesTurn) << '\n';
         isPlayerOnesTurn = !isPlayerOnesTurn;
+        moveNumber++;
     }
 }
 
@@ -521,15 +519,13 @@ void printHistory(const Game& game) {
     const bool isPlayerOnesTurn = (position.size() % 2 == 0);
 
     configureConsoleForUnicode();
-    clearScreen();
     std::cout << "Strategy tried to play an illegal move outside WHILE_LEGAL.\n\n";
     printHistory(position);
     std::cout << "\nIllegal move:\n";
     std::cout
-        << "  P" << (isPlayerOnesTurn ? 1 : 2)
-        << ": "
-        << ManipulateMove::toSymbols(position.E, move, isPlayerOnesTurn)
-        << " (" << ManipulateMove::toString(position.E, move) << ")\n\n";
+        << "  "
+        << ManipulateMove::moveLine(position.E, move, static_cast<int>(position.size()) + 1, isPlayerOnesTurn)
+        << "\n\n";
     std::cout << "Press any key to continue.";
     _getch();
 
@@ -538,7 +534,6 @@ void printHistory(const Game& game) {
 
 [[noreturn]] void showNoMatchingMoveErrorAndPause(const Game& position) {
     configureConsoleForUnicode();
-    clearScreen();
     std::cout << "No move matched the strategy rules.\n\n";
     printHistory(position);
     std::cout << "\nPress any key to continue.";

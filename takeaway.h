@@ -106,6 +106,16 @@ namespace ManipulateMove
 		}
 		return result; // Return the final string representation of the move
 	}
+
+	// Convert the move into a full line of text like "P1: ●○○○ (1 = {1})"
+	// This is useful when we want to print a move in a readable way that contains the player number, symbols, bitmask number and set
+	inline std::string moveLine(UniversalSet E, Move move, int moveNumber, bool isPlayerOnesTurn) {
+		return
+			"P" + std::to_string(isPlayerOnesTurn ? 1 : 2) + // Player indicator
+			" move " + std::to_string(moveNumber) + ": " + // Move number
+			toSymbols(E, move, isPlayerOnesTurn) + // Symbols
+			" (" + toString(E, move) + ")"; // Set and bitmask number
+	}
 };
 
 // This game has a lot of symmetry

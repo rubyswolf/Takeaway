@@ -59,13 +59,25 @@ MoveTest move6 =
     (~everything).when(!move5HasBit3OrBit4).otherwise(nothing);
 
 IF (move1HasSize1) {
-    PICK(all_elements(~picked_on_move(1)));
-    PICK(all_elements(~picked_on_move(1) & ~picked_on_move(3)));
+    IF (current_move == 2)
+    {
+        PICK(all_elements(~picked_on_move(1)));
+    }
+    IF (current_move == 4)
+    {
+        PICK(all_elements(~picked_on_move(1) & ~picked_on_move(3)));
+    }
 }
 
 IF (move1HasSize3) {
-    PICK(all_elements(~picked_on_move(1)));
-    PICK(all_elements(picked_on_move(1) & ~picked_on_move(3)));
+    IF (current_move == 2)
+    {
+        PICK(all_elements(~picked_on_move(1)));
+    }
+    IF (current_move == 4)
+    {
+        PICK(all_elements(picked_on_move(1) & ~picked_on_move(3)));
+    }
 }
 
 IF (move1HasSize2) {
@@ -78,7 +90,10 @@ IF (move1HasSize2) {
     }
 
     IF (bigCase) {
-        PICK(all_elements(~picked_on_move(3)));
+        IF (current_move == 4)
+        {
+            PICK(all_elements(~picked_on_move(3)));
+        }
         PICK(all_elements(~both) & all_elements(~picked_on_move(5)));
     }
     ELSE {

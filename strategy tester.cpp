@@ -34,8 +34,8 @@ void printCounterexampleLine(const Game& start, const std::vector<Move>& line) {
 
     for (Move move : line) {
         std::cout
-            << "  P" << (playerOnesTurn ? 1 : 2)
-            << ": " << ManipulateMove::toString(position.E, move)
+            << "  "
+            << ManipulateMove::moveLine(position.E, move, static_cast<int>(position.size()) + 1, playerOnesTurn)
             << '\n';
 
         position.playMove(move);
@@ -44,10 +44,11 @@ void printCounterexampleLine(const Game& start, const std::vector<Move>& line) {
 }
 
 void testStrategy(const std::string& label, int n, const Strategy& strategy) {
+    std::cout << label << ":\n";
+
     Game start{ UniversalSet(n) };
     StrategyVerificationResult result = verifyStrategy(strategy, start, false);
 
-    std::cout << label << ":\n";
     if (result.wins) {
         std::cout << "  winning strategy\n";
     }
@@ -60,8 +61,8 @@ void testStrategy(const std::string& label, int n, const Strategy& strategy) {
 }
 
 int main() {
-    testStrategy("n=3", 3, buildN3WinningStrategy());
-    testStrategy("n=4", 4, buildN4WinningStrategy());
+    testStrategy("winning n=3", 3, buildN3WinningStrategy());
+    testStrategy("winning n=4", 4, buildN4WinningStrategy());
     testStrategy("universal n=3", 3, buildUniversalStrategy());
     testStrategy("universal n=4", 4, buildUniversalStrategy());
 }

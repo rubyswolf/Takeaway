@@ -120,11 +120,12 @@ int promptUniversalSetSize() {
 std::vector<std::string> historyLines(const Game& game) {
     std::vector<std::string> lines;
     bool isPlayerOnesTurn = true;
+    int moveNumber = 1;
 
     for (Move move : game) {
-        const std::string prefix = "P" + std::to_string(isPlayerOnesTurn ? 1 : 2) + ": ";
-        lines.push_back(prefix + ManipulateMove::toSymbols(game.E, move, isPlayerOnesTurn) + " (" + ManipulateMove::toString(game.E, move) + ")");
+        lines.push_back(ManipulateMove::moveLine(game.E, move, moveNumber, isPlayerOnesTurn));
         isPlayerOnesTurn = !isPlayerOnesTurn;
+        moveNumber++;
     }
 
     return lines;
@@ -270,9 +271,7 @@ Move chooseStrategyMove(
         playerOneMode,
         playerTwoMode,
         "",
-        "P" + std::to_string(isPlayerOnesTurn ? 1 : 2) + " strategy chooses " +
-        ManipulateMove::toSymbols(game.E, *move, isPlayerOnesTurn) +
-        " (" + ManipulateMove::toString(game.E, *move) + ").");
+        ManipulateMove::moveLine(game.E, *move, static_cast<int>(game.size()) + 1, isPlayerOnesTurn) + ".");
     std::cout << "Press any key to continue.";
     _getch();
 
