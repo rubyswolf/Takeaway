@@ -1,5 +1,3 @@
-#include "strategy.h"
-
 ElementTest both    = picked_on_move(1) & picked_on_move(2);
 ElementTest only1   = picked_on_move(1) & ~picked_on_move(2);
 ElementTest only2   = ~picked_on_move(1) & picked_on_move(2);
@@ -71,11 +69,13 @@ IF (move1HasSize3) {
 }
 
 IF (move1HasSize2) {
-    PICK(
-        any_from(1, picked_on_move(1))
-        &
-        any_from(1, ~picked_on_move(1))
-    );
+    IF (current_move == 2) {
+        PICK(
+            any_from(1, picked_on_move(1))
+            &
+            any_from(1, ~picked_on_move(1))
+        );
+    }
 
     IF (bigCase) {
         PICK(all_elements(~picked_on_move(3)));

@@ -10,6 +10,7 @@
 // The question is who has the winning strategy for n=3 and n=4 and what is that strategy?
 // I aimed to solve this via a brute force search
 
+#include <algorithm> // This lets us reorder and erase collections with helpers like remove_if
 #include <iostream> // This library lets us output to the console window that will be attached to the program when we run it
 #include <fstream> // This lets us write to output to files
 #include <vector> // This allows us to create dynamically sized lists of items called vectors
@@ -48,7 +49,7 @@ namespace ManipulateMove
 	// Flip every bit in the mask to get the compliment
 	// That is, every item that was in the set is now out of the set and every item that was out of the set is now in the set
 	// This is equivalent to the operation E\move in set theory
-	Move compliment(UniversalSet E, Move move)
+	inline Move compliment(UniversalSet E, Move move)
 	{
 		// Doing 1 - x flips a bit because 1 - 0 = 1 and 1 - 1 = 0
 		// Assuming we have a full number of 1s like 1111...,
@@ -60,7 +61,7 @@ namespace ManipulateMove
 
 	// Returns 1 if the move set contains the element at the given index, and 0 otherwise
 	// Note that computers count in binary starting from zero so the first element is actually element 0, second is 1 ...
-	Move hasElement(Move move, int elementIndex)
+	inline Move hasElement(Move move, int elementIndex)
 	{
 		// To extract a specific bit (element) from the mask
 		// we first bit shift to the right by how ever many binary places we need
@@ -74,7 +75,7 @@ namespace ManipulateMove
 	}
 
 	// Convert the move from a bitmask to a text format like "3 = {1, 2}"
-	std::string toString(UniversalSet E, Move move) {
+	inline std::string toString(UniversalSet E, Move move) {
 		std::string result = std::to_string(move) + " = {"; // Start the string with the move number and an opening brace for the set representation
 		for (int i = 0; i < E.size; i++) { // For each element in the universal set E
 			if (hasElement(move, i)) { // If this element is in the move
@@ -92,7 +93,7 @@ namespace ManipulateMove
 	// Convert the move to a string of empty circles for not selected items ○ and filled circles for selected items ● for player one
 	// and filled or not filled squares for player two □/■
 	// with the least significant bit as the first character in the string and the most significant bit as the last character in the string
-	std::string toSymbols(UniversalSet E, Move move, bool isPlayerOnesTurn) {
+	inline std::string toSymbols(UniversalSet E, Move move, bool isPlayerOnesTurn) {
 
 		std::string result = ""; // Start with an empty string to build the result
 		for (int i = 0; i < E.size; i++) { // For each element in the universal set E
@@ -220,8 +221,8 @@ public:
 	}
 
 	// Get ALL moves, including impossible moves such as the empty set and full set E
-	vector<Move> allMoves() {
-		vector<Move> allMoves; // A list (vector) to store all possible moves that we will generate
+	std::vector<Move> allMoves() const {
+		std::vector<Move> allMoves; // A list (vector) to store all possible moves that we will generate
 
 		for ( // Start a new loop for all possible moves
 			int candidateMove = 0; // The loop starts at 0 for the empty set
@@ -234,8 +235,8 @@ public:
 
 	// Get all possible moves (legal or not) without taking into account the current position or the rules of the game
 	// This is static so we can call it without referencing a specific game
-	vector<Move> allPossibleMoves() {
-		vector<Move> allPossibleMoves; // A list (vector) to store all possible moves that we will generate
+	std::vector<Move> allPossibleMoves() const {
+		std::vector<Move> allPossibleMoves; // A list (vector) to store all possible moves that we will generate
 
 		for ( // Start a new loop for all possible moves
 			int candidateMove = 1; // The loop starts at 1 (...0001) because we can't pick the empty set which is 0 (...0000)
@@ -249,7 +250,7 @@ public:
 	}
 
 	// Get only the principal moves from this position
-	vector<Move> principalMoves(int interchangableIndex = 0, vector<int> elements = {}) {
+	std::vector<Move> principalMoves(int interchangableIndex = 0, std::vector<int> elements = {}) const {
 		// When creating a principal move we can chose any number of elements from each interchangable
 		// We can choose anywere from 0 to all of the elements in each interchangable
 		// So we can generate this recursively by first choosing how many elements we want from the first interchangable
@@ -273,15 +274,15 @@ public:
 			return { move }; // Return this move as a single element vector
 		}
 		else { // Otherwise we need to select how many elements we want from this interchangable and then recursively generate the moves for the next interchangable
-			vector<Move> moves; // A vector to store the generated principal moves
+			std::vector<Move> moves; // A vector to store the generated principal moves
 			size_t interchangableSize = gameSymmetry[gameSymmetry.size() - interchangableIndex - 1].size(); // The number of elements in this interchangable
 			// Note the index here is backwards to make the choice for the last interchangable first and work backwards
 
 			// For each possible number of selected elements from this interchangable (from 0 to all)
 			for (int selectedElements = 0; selectedElements <= interchangableSize; selectedElements++) {
-				vector<int> newElements = elements; // Create a new vector to represent the number of selected elements so far
+				std::vector<int> newElements = elements; // Create a new vector to represent the number of selected elements so far
 				newElements.push_back(selectedElements); // Add the number of selected elements from this interchangable to the vector
-				vector<Move> subMoves = principalMoves(interchangableIndex + 1, newElements); // Recursively generate the moves for the next interchangable with the updated selected elements vector
+				std::vector<Move> subMoves = principalMoves(interchangableIndex + 1, newElements); // Recursively generate the moves for the next interchangable with the updated selected elements vector
 				moves.insert(moves.end(), subMoves.begin(), subMoves.end()); // Add the generated moves to the main list of moves
 			}
 			return moves; // Return the generated moves
@@ -330,9 +331,9 @@ public:
 
 	// Now we have a list of all possible moves but many of them will be illegal according to the rules of the game
 	// So we need a method to filter out the illegal moves and only keep the legal ones
-	vector<Move> removeIllegalMoves(vector<Move> candidateMoves) const {
+	std::vector<Move> removeIllegalMoves(std::vector<Move> candidateMoves) const {
 
-		vector<Move> legalMoves; // A list (vector) to store only the legal moves that make it through the filtering
+		std::vector<Move> legalMoves; // A list (vector) to store only the legal moves that make it through the filtering
 
 		// We'll try every candidate move and only keep it if it's legal
 		for (Move candidateMove : candidateMoves) {
@@ -351,12 +352,12 @@ public:
 	}
 
 	// A method to get the legal moves from the current position
-	vector<Move> legalMoves() {
+	std::vector<Move> legalMoves() const {
 		return removeIllegalMoves(allPossibleMoves()); // We can just get all possible moves and then filter out the illegal ones to get the legal moves
 	}
 
 	// A method to get the principal legal moves from the current position
-	vector<Move> principalLegalMoves() {
+	std::vector<Move> principalLegalMoves() const {
 		return removeIllegalMoves(principalMoves()); // We can just get the principal moves and then filter out the illegal ones to get the principal legal moves
 	}
 };
