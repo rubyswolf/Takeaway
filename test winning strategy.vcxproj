@@ -20,18 +20,23 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="strategy.cpp" />
-    <ClCompile Include="takeaway solver.cpp" />
+    <ClCompile Include="strategy tester.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="strategy.h" />
     <ClInclude Include="takeaway.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="n3 winning strategy.cpp" />
+    <None Include="n4 winning strategy.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{7dec0b4e-97ea-4633-9e35-7a1b3d507962}</ProjectGuid>
-    <RootNamespace>takeaway</RootNamespace>
+    <ProjectGuid>{8C3A5D24-6A71-447A-82F4-01C6E1AF2A15}</ProjectGuid>
+    <RootNamespace>strategytester</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>test winning strategy</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
