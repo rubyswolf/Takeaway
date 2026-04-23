@@ -1,5 +1,6 @@
 #include "strategy.h"
 
+#include <stdexcept>
 #include <sstream>
 #include <unordered_map>
 
@@ -53,9 +54,10 @@ bool AllElementsNode::eval(const Game& game, Move move) const {
     return true;
 }
 
-AnyFromNode::AnyFromNode(int n, const ElementTest& test) : n(n), test(test) {}
+AnyFromNode::AnyFromNode(const IntExpr& n, const ElementTest& test) : n(n), test(test) {}
 
 bool AnyFromNode::eval(const Game& game, Move move) const {
+    const int target = ::eval(n, game);
     int count = 0;
 
     for (Element element = 0; element < game.E.size; element++) {
@@ -64,7 +66,7 @@ bool AnyFromNode::eval(const Game& game, Move move) const {
         }
     }
 
-    return count == n;
+    return count == target;
 }
 
 NotElementTestNode::NotElementTestNode(const ElementTest& inner) : inner(inner) {}
@@ -213,8 +215,38 @@ int CountElementsNode::eval(const Game& game) const {
     return count;
 }
 
+MoveWhereNode::MoveWhereNode(const MoveTest& test) : test(test) {}
+
+int MoveWhereNode::eval(const Game& game) const {
+    for (int i = 0; i < static_cast<int>(game.size()); i++) {
+        if (::eval(test, game, game[i])) {
+            return i + 1;
+        }
+    }
+
+    throw std::runtime_error("move_where: no move in the game passed the move test");
+}
+
+AddIntNode::AddIntNode(const IntExpr& lhs, const IntExpr& rhs) : lhs(lhs), rhs(rhs) {}
+
+int AddIntNode::eval(const Game& game) const {
+    return ::eval(lhs, game) + ::eval(rhs, game);
+}
+
+SubtractIntNode::SubtractIntNode(const IntExpr& lhs, const IntExpr& rhs) : lhs(lhs), rhs(rhs) {}
+
+int SubtractIntNode::eval(const Game& game) const {
+    return ::eval(lhs, game) - ::eval(rhs, game);
+}
+
+namespace {
+IntExpr literal_int(int value) {
+    return IntExpr{ std::make_shared<LiteralIntNode>(value) };
+}
+} // namespace
+
 ElementTest picked_on_move(int move_number) {
-    return picked_on_move(IntExpr{ std::make_shared<LiteralIntNode>(move_number) });
+    return picked_on_move(literal_int(move_number));
 }
 
 ElementTest picked_on_move(const IntExpr& move_number) {
@@ -222,6 +254,7 @@ ElementTest picked_on_move(const IntExpr& move_number) {
 }
 
 const ElementTest is_singleton = ElementTest{ std::make_shared<IsSingletonNode>() };
+const ElementTest are_singleton = is_singleton;
 
 ElementTest operator~(const ElementTest& inner) {
     return ElementTest{ std::make_shared<NotElementTestNode>(inner) };
@@ -240,6 +273,10 @@ MoveTest all_elements(const ElementTest& test) {
 }
 
 MoveTest any_from(int n, const ElementTest& test) {
+    return any_from(literal_int(n), test);
+}
+
+MoveTest any_from(const IntExpr& n, const ElementTest& test) {
     return MoveTest{ std::make_shared<AnyFromNode>(n, test) };
 }
 
@@ -287,24 +324,28 @@ Condition operator||(const Condition& a, const Condition& b) {
     return Condition{ std::make_shared<OrConditionNode>(a, b) };
 }
 
+Condition operator==(const IntExpr& lhs, const IntExpr& rhs) {
+    return Condition{ std::make_shared<CompareIntNode>(lhs, rhs, CompareIntNode::EQ) };
+}
+
 Condition operator==(const IntExpr& lhs, int rhs) {
-    return Condition{
-        std::make_shared<CompareIntNode>(
-            lhs,
-            IntExpr{ std::make_shared<LiteralIntNode>(rhs) },
-            CompareIntNode::EQ
-        )
-    };
+    return lhs == literal_int(rhs);
+}
+
+Condition operator==(int lhs, const IntExpr& rhs) {
+    return literal_int(lhs) == rhs;
+}
+
+Condition operator!=(const IntExpr& lhs, const IntExpr& rhs) {
+    return Condition{ std::make_shared<CompareIntNode>(lhs, rhs, CompareIntNode::NEQ) };
 }
 
 Condition operator!=(const IntExpr& lhs, int rhs) {
-    return Condition{
-        std::make_shared<CompareIntNode>(
-            lhs,
-            IntExpr{ std::make_shared<LiteralIntNode>(rhs) },
-            CompareIntNode::NEQ
-        )
-    };
+    return lhs != literal_int(rhs);
+}
+
+Condition operator!=(int lhs, const IntExpr& rhs) {
+    return literal_int(lhs) != rhs;
 }
 
 Condition operator==(const Condition& lhs, const Condition& rhs) {
@@ -317,6 +358,34 @@ Condition operator!=(const Condition& lhs, const Condition& rhs) {
 
 IntExpr number_of_elements(const ElementTest& test) {
     return IntExpr{ std::make_shared<CountElementsNode>(test) };
+}
+
+IntExpr move_where(const MoveTest& test) {
+    return IntExpr{ std::make_shared<MoveWhereNode>(test) };
+}
+
+IntExpr operator+(const IntExpr& lhs, const IntExpr& rhs) {
+    return IntExpr{ std::make_shared<AddIntNode>(lhs, rhs) };
+}
+
+IntExpr operator+(const IntExpr& lhs, int rhs) {
+    return lhs + literal_int(rhs);
+}
+
+IntExpr operator+(int lhs, const IntExpr& rhs) {
+    return literal_int(lhs) + rhs;
+}
+
+IntExpr operator-(const IntExpr& lhs, const IntExpr& rhs) {
+    return IntExpr{ std::make_shared<SubtractIntNode>(lhs, rhs) };
+}
+
+IntExpr operator-(const IntExpr& lhs, int rhs) {
+    return lhs - literal_int(rhs);
+}
+
+IntExpr operator-(int lhs, const IntExpr& rhs) {
+    return literal_int(lhs) - rhs;
 }
 
 const IntExpr current_move = IntExpr{ std::make_shared<CurrentMoveNode>() };
@@ -339,7 +408,7 @@ MoveTestWhenBuilder MoveTest::when(const Condition& cond) const {
 }
 
 void StrategyBuilder::pick(const MoveTest& m) {
-    rules.push_back({ current, m });
+    rules.push_back({ current, m, while_legal_depth > 0 });
 }
 
 Strategy StrategyBuilder::finish() const {
@@ -372,7 +441,13 @@ ElseScope::~ElseScope() {
     }
 }
 
-WhileLegalScope::WhileLegalScope(StrategyBuilder& builder) : builder(builder) {}
+WhileLegalScope::WhileLegalScope(StrategyBuilder& builder) : builder(builder) {
+    builder.while_legal_depth++;
+}
+
+WhileLegalScope::~WhileLegalScope() {
+    builder.while_legal_depth--;
+}
 
 bool eval(const ElementTest& test, const Game& game, Element element) {
     return test.ptr->eval(game, element);
@@ -391,11 +466,25 @@ int eval(const IntExpr& expr, const Game& game) {
 }
 
 namespace {
+void throwIfRuleAllowsIllegalMoves(const Rule& rule, const Game& position) {
+    if (rule.allow_illegal) {
+        return;
+    }
+
+    for (Move candidate : position.allMoves()) {
+        if (eval(rule.move, position, candidate) && !position.isMoveLegal(candidate)) {
+            throw std::runtime_error("pick: rule matched an illegal move outside WHILE_LEGAL");
+        }
+    }
+}
+
 std::vector<Move> allowedFromCandidates(const Strategy& strategy, const Game& position, const std::vector<Move>& candidates) {
     for (const Rule& rule : strategy.rules) {
         if (!eval(rule.guard, position)) {
             continue;
         }
+
+        throwIfRuleAllowsIllegalMoves(rule, position);
 
         std::vector<Move> result;
         for (Move candidate : candidates) {

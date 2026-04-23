@@ -99,10 +99,10 @@ struct AllElementsNode : MoveTestNode {
 };
 
 struct AnyFromNode : MoveTestNode {
-    int n;
+    IntExpr n;
     ElementTest test;
 
-    AnyFromNode(int n, const ElementTest& test);
+    AnyFromNode(const IntExpr& n, const ElementTest& test);
     bool eval(const Game& game, Move move) const override;
 };
 
@@ -257,9 +257,33 @@ struct CountElementsNode : IntNode {
     int eval(const Game& game) const override;
 };
 
+struct MoveWhereNode : IntNode {
+    MoveTest test;
+
+    explicit MoveWhereNode(const MoveTest& test);
+    int eval(const Game& game) const override;
+};
+
+struct AddIntNode : IntNode {
+    IntExpr lhs;
+    IntExpr rhs;
+
+    AddIntNode(const IntExpr& lhs, const IntExpr& rhs);
+    int eval(const Game& game) const override;
+};
+
+struct SubtractIntNode : IntNode {
+    IntExpr lhs;
+    IntExpr rhs;
+
+    SubtractIntNode(const IntExpr& lhs, const IntExpr& rhs);
+    int eval(const Game& game) const override;
+};
+
 struct Rule {
     Condition guard;
     MoveTest move;
+    bool allow_illegal = false;
 };
 
 struct Strategy {
@@ -269,12 +293,14 @@ struct Strategy {
 ElementTest picked_on_move(int move_number);
 ElementTest picked_on_move(const IntExpr& move_number);
 extern const ElementTest is_singleton;
+extern const ElementTest are_singleton;
 ElementTest operator~(const ElementTest& inner);
 ElementTest operator&(const ElementTest& a, const ElementTest& b);
 ElementTest operator|(const ElementTest& a, const ElementTest& b);
 
 MoveTest all_elements(const ElementTest& test);
 MoveTest any_from(int n, const ElementTest& test);
+MoveTest any_from(const IntExpr& n, const ElementTest& test);
 MoveTest operator~(const MoveTest& inner);
 MoveTest operator&(const MoveTest& a, const MoveTest& b);
 MoveTest operator|(const MoveTest& a, const MoveTest& b);
@@ -290,12 +316,23 @@ Condition has_been_played(const MoveTest& test);
 Condition operator!(const Condition& inner);
 Condition operator&&(const Condition& a, const Condition& b);
 Condition operator||(const Condition& a, const Condition& b);
+Condition operator==(const IntExpr& lhs, const IntExpr& rhs);
 Condition operator==(const IntExpr& lhs, int rhs);
+Condition operator==(int lhs, const IntExpr& rhs);
+Condition operator!=(const IntExpr& lhs, const IntExpr& rhs);
 Condition operator!=(const IntExpr& lhs, int rhs);
+Condition operator!=(int lhs, const IntExpr& rhs);
 Condition operator==(const Condition& lhs, const Condition& rhs);
 Condition operator!=(const Condition& lhs, const Condition& rhs);
 
 IntExpr number_of_elements(const ElementTest& test);
+IntExpr move_where(const MoveTest& test);
+IntExpr operator+(const IntExpr& lhs, const IntExpr& rhs);
+IntExpr operator+(const IntExpr& lhs, int rhs);
+IntExpr operator+(int lhs, const IntExpr& rhs);
+IntExpr operator-(const IntExpr& lhs, const IntExpr& rhs);
+IntExpr operator-(const IntExpr& lhs, int rhs);
+IntExpr operator-(int lhs, const IntExpr& rhs);
 extern const IntExpr current_move;
 extern const IntExpr previous_move;
 
@@ -324,6 +361,7 @@ struct StrategyBuilder {
     std::vector<Rule> rules;
     std::vector<IfFrame> if_stack;
     int next_if_id = 0;
+    int while_legal_depth = 0;
 
     void pick(const MoveTest& m);
     Strategy finish() const;
@@ -353,6 +391,7 @@ struct WhileLegalScope {
     StrategyBuilder& builder;
 
     explicit WhileLegalScope(StrategyBuilder& builder);
+    ~WhileLegalScope();
 
     explicit operator bool() const { return true; }
 };
