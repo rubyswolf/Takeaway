@@ -1,8 +1,18 @@
 #include "strategy.h"
 
+#include <locale.h>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <windows.h>
+
+namespace {
+void configureConsoleForUnicode() {
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+    setlocale(LC_ALL, ".UTF-8");
+}
+}
 
 Strategy buildN3WinningStrategy() {
     StrategyBuilder builder;
@@ -47,7 +57,12 @@ void testStrategy(const std::string& label, int n, const Strategy& strategy) {
     std::cout << label << ":\n";
 
     Game start{ UniversalSet(n) };
-    StrategyVerificationResult result = verifyStrategy(strategy, start, false);
+    const StrategyVerificationResult result = verifyStrategy(strategy, start, false);
+
+    if (hasStrategyRuntimeError()) {
+        std::cout << '\n';
+        return;
+    }
 
     if (result.wins) {
         std::cout << "  winning strategy\n";
@@ -61,6 +76,7 @@ void testStrategy(const std::string& label, int n, const Strategy& strategy) {
 }
 
 int main() {
+    configureConsoleForUnicode();
     testStrategy("winning n=3", 3, buildN3WinningStrategy());
     testStrategy("winning n=4", 4, buildN4WinningStrategy());
     testStrategy("universal n=3", 3, buildUniversalStrategy());

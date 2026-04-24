@@ -1,12 +1,15 @@
 #include "strategy.h"
 
-#include <conio.h>
 #include <cstdlib>
 #include <locale.h>
-#include <stdexcept>
 #include <sstream>
 #include <unordered_map>
 #include <windows.h>
+
+namespace {
+void showMoveWhereErrorAndPause(const Game& position);
+std::optional<std::string> findRuleNameForMove(const Strategy& strategy, const Game& position, Move move);
+}
 
 PickedOnMoveNode::PickedOnMoveNode(const IntExpr& move_number) : move_number(move_number) {}
 
@@ -29,6 +32,10 @@ bool IsSingletonNode::eval(const Game& game, Element element) const {
         }
     }
 
+    return false;
+}
+
+bool FailElementNode::eval(const Game&, Element) const {
     return false;
 }
 
@@ -222,13 +229,18 @@ int CountElementsNode::eval(const Game& game) const {
 MoveWhereNode::MoveWhereNode(const MoveTest& test) : test(test) {}
 
 int MoveWhereNode::eval(const Game& game) const {
+    if (hasStrategyRuntimeError()) {
+        return 0;
+    }
+
     for (int i = 0; i < static_cast<int>(game.size()); i++) {
         if (::eval(test, game, game[i])) {
             return i + 1;
         }
     }
 
-    throw std::runtime_error("move_where: no move in the game passed the move test");
+    showMoveWhereErrorAndPause(game);
+    return 0;
 }
 
 AddIntNode::AddIntNode(const IntExpr& lhs, const IntExpr& rhs) : lhs(lhs), rhs(rhs) {}
@@ -257,6 +269,7 @@ ElementTest picked_on_move(const IntExpr& move_number) {
     return ElementTest{ std::make_shared<PickedOnMoveNode>(move_number) };
 }
 
+const ElementTest fail = ElementTest{ std::make_shared<FailElementNode>() };
 const ElementTest is_singleton = ElementTest{ std::make_shared<IsSingletonNode>() };
 const ElementTest are_singleton = is_singleton;
 
@@ -411,24 +424,48 @@ MoveTestWhenBuilder MoveTest::when(const Condition& cond) const {
     return MoveTestWhenBuilder{ *this, cond };
 }
 
+void StrategyBuilder::flush_pending_ifs() {
+    while (!if_stack.empty() && if_stack.back().awaiting_else) {
+        current = if_stack.back().parent;
+        if_stack.pop_back();
+    }
+}
+
+void StrategyBuilder::flush_pending_ifs_above(int id) {
+    while (!if_stack.empty() && if_stack.back().id != id && if_stack.back().awaiting_else) {
+        current = if_stack.back().parent;
+        if_stack.pop_back();
+    }
+}
+
 void StrategyBuilder::pick(const MoveTest& m) {
-    rules.push_back({ current, m, while_legal_depth > 0 });
+    flush_pending_ifs();
+    rules.push_back({ current, m, while_legal_depth > 0, std::nullopt });
+}
+
+void StrategyBuilder::pick(const MoveTest& m, const std::string& name) {
+    flush_pending_ifs();
+    rules.push_back({ current, m, while_legal_depth > 0, name });
 }
 
 Strategy StrategyBuilder::finish() const {
-    return Strategy{ rules };
+    StrategyBuilder copy = *this;
+    copy.flush_pending_ifs();
+    return Strategy{ copy.rules };
 }
 
 IfScope::IfScope(StrategyBuilder& builder, const Condition& cond)
     : builder(builder), id(builder.next_if_id++) {
-    builder.if_stack.push_back({ id, builder.current, cond });
+    builder.flush_pending_ifs();
+    builder.if_stack.push_back({ id, builder.current, cond, false });
     builder.current = builder.current && cond;
 }
 
 IfScope::~IfScope() {
+    builder.flush_pending_ifs_above(id);
     if (!builder.if_stack.empty() && builder.if_stack.back().id == id) {
         builder.current = builder.if_stack.back().parent;
-        builder.if_stack.pop_back();
+        builder.if_stack.back().awaiting_else = true;
     }
 }
 
@@ -436,9 +473,11 @@ ElseScope::ElseScope(StrategyBuilder& builder)
     : builder(builder), id(builder.if_stack.back().id) {
     const IfFrame& frame = builder.if_stack.back();
     builder.current = frame.parent && !frame.cond;
+    builder.if_stack.back().awaiting_else = false;
 }
 
 ElseScope::~ElseScope() {
+    builder.flush_pending_ifs_above(id);
     if (!builder.if_stack.empty() && builder.if_stack.back().id == id) {
         builder.current = builder.if_stack.back().parent;
         builder.if_stack.pop_back();
@@ -446,6 +485,7 @@ ElseScope::~ElseScope() {
 }
 
 WhileLegalScope::WhileLegalScope(StrategyBuilder& builder) : builder(builder) {
+    builder.flush_pending_ifs();
     builder.while_legal_depth++;
 }
 
@@ -467,6 +507,24 @@ bool eval(const Condition& condition, const Game& game) {
 
 int eval(const IntExpr& expr, const Game& game) {
     return expr.ptr->eval(game);
+}
+
+namespace {
+std::string g_strategy_runtime_error;
+const Strategy* g_active_strategy = nullptr;
+bool g_active_strategy_is_player_one = false;
+}
+
+void clearStrategyRuntimeError() {
+    g_strategy_runtime_error.clear();
+}
+
+bool hasStrategyRuntimeError() {
+    return !g_strategy_runtime_error.empty();
+}
+
+std::string strategyRuntimeErrorMessage() {
+    return g_strategy_runtime_error;
 }
 
 namespace {
@@ -501,6 +559,7 @@ void clearScreen() {
 void printHistory(const Game& game) {
     bool isPlayerOnesTurn = true;
     int moveNumber = 1;
+    Game position{ game.E };
 
     std::cout << "History:\n";
     if (game.empty()) {
@@ -509,13 +568,31 @@ void printHistory(const Game& game) {
     }
 
     for (Move move : game) {
-        std::cout << "  " << ManipulateMove::moveLine(game.E, move, moveNumber, isPlayerOnesTurn) << '\n';
+        const bool strategyMadeMove =
+            g_active_strategy != nullptr
+            && isPlayerOnesTurn == g_active_strategy_is_player_one;
+        const std::optional<std::string> ruleName =
+            strategyMadeMove ? findRuleNameForMove(*g_active_strategy, position, move) : std::nullopt;
+
+        std::cout
+            << "  "
+            << ManipulateMove::moveLine(game.E, move, moveNumber, isPlayerOnesTurn, ruleName)
+            << '\n';
+
+        position.playMove(move);
         isPlayerOnesTurn = !isPlayerOnesTurn;
         moveNumber++;
     }
 }
 
-[[noreturn]] void showIllegalMoveErrorAndPause(const Game& position, Move move) {
+void showMoveWhereErrorAndPause(const Game& position) {
+    configureConsoleForUnicode();
+    std::cout << "move_where did not match any move in the game.\n\n";
+    printHistory(position);
+    g_strategy_runtime_error = "move_where: no move in the game passed the move test";
+}
+
+void showIllegalMoveErrorAndPause(const Game& position, Move move, const std::optional<std::string>& ruleName) {
     const bool isPlayerOnesTurn = (position.size() % 2 == 0);
 
     configureConsoleForUnicode();
@@ -524,43 +601,51 @@ void printHistory(const Game& game) {
     std::cout << "\nIllegal move:\n";
     std::cout
         << "  "
-        << ManipulateMove::moveLine(position.E, move, static_cast<int>(position.size()) + 1, isPlayerOnesTurn)
+        << ManipulateMove::moveLine(
+            position.E,
+            move,
+            static_cast<int>(position.size()) + 1,
+            isPlayerOnesTurn,
+            ruleName
+        )
         << "\n\n";
-    std::cout << "Press any key to continue.";
-    _getch();
-
-    throw std::runtime_error("illegal strategy move outside WHILE_LEGAL");
+    g_strategy_runtime_error = "illegal strategy move outside WHILE_LEGAL";
 }
 
-[[noreturn]] void showNoMatchingMoveErrorAndPause(const Game& position) {
+void showNoMatchingMoveErrorAndPause(const Game& position) {
     configureConsoleForUnicode();
     std::cout << "No move matched the strategy rules.\n\n";
     printHistory(position);
-    std::cout << "\nPress any key to continue.";
-    _getch();
-
-    throw std::runtime_error("no move matched the strategy rules");
+    g_strategy_runtime_error = "no move matched the strategy rules";
 }
 
 void throwIfRuleAllowsIllegalMoves(const Rule& rule, const Game& position) {
-    if (rule.allow_illegal) {
+    if (rule.allow_illegal || hasStrategyRuntimeError()) {
         return;
     }
 
     for (Move candidate : position.allMoves()) {
         if (eval(rule.move, position, candidate) && !position.isMoveLegal(candidate)) {
-            showIllegalMoveErrorAndPause(position, candidate);
+            showIllegalMoveErrorAndPause(position, candidate, rule.name);
+            return;
         }
     }
 }
 
 std::vector<Move> allowedFromCandidates(const Strategy& strategy, const Game& position, const std::vector<Move>& candidates) {
+    if (hasStrategyRuntimeError()) {
+        return {};
+    }
+
     for (const Rule& rule : strategy.rules) {
         if (!eval(rule.guard, position)) {
             continue;
         }
 
         throwIfRuleAllowsIllegalMoves(rule, position);
+        if (hasStrategyRuntimeError()) {
+            return {};
+        }
 
         std::vector<Move> result;
         for (Move candidate : candidates) {
@@ -592,11 +677,44 @@ std::string makeStateKey(const Game& position, bool strategyPlayersTurn) {
     return out.str();
 }
 
+std::optional<std::string> findRuleNameForMove(const Strategy& strategy, const Game& position, Move move) {
+    const std::vector<Move> candidates = position.legalMoves();
+
+    for (const Rule& rule : strategy.rules) {
+        if (!eval(rule.guard, position)) {
+            continue;
+        }
+
+        std::vector<Move> result;
+        for (Move candidate : candidates) {
+            if (eval(rule.move, position, candidate)) {
+                result.push_back(candidate);
+            }
+        }
+
+        if (!result.empty()) {
+            for (Move candidate : result) {
+                if (candidate == move) {
+                    return rule.name;
+                }
+            }
+
+            return std::nullopt;
+        }
+    }
+
+    return std::nullopt;
+}
+
 StrategyVerificationResult verifyStrategyImpl(
     const Strategy& strategy,
     const Game& position,
     bool strategyPlayersTurn,
     std::unordered_map<std::string, StrategyVerificationResult>& memo) {
+
+    if (hasStrategyRuntimeError()) {
+        return {};
+    }
 
     const std::string key = makeStateKey(position, strategyPlayersTurn);
     const auto found = memo.find(key);
@@ -620,6 +738,9 @@ StrategyVerificationResult verifyStrategyImpl(
             next.playMove(move);
 
             StrategyVerificationResult child = verifyStrategyImpl(strategy, next, false, memo);
+            if (hasStrategyRuntimeError()) {
+                return {};
+            }
             if (child.wins) {
                 result.wins = true;
                 result.line.push_back(move);
@@ -651,6 +772,9 @@ StrategyVerificationResult verifyStrategyImpl(
         next.playMove(reply);
 
         StrategyVerificationResult child = verifyStrategyImpl(strategy, next, true, memo);
+        if (hasStrategyRuntimeError()) {
+            return {};
+        }
         if (!child.wins) {
             result.wins = false;
             result.line.push_back(reply);
@@ -698,6 +822,11 @@ bool strategyWinsFrom(const Strategy& strategy, const Game& position, bool strat
 }
 
 StrategyVerificationResult verifyStrategy(const Strategy& strategy, const Game& position, bool strategyPlayersTurn) {
+    clearStrategyRuntimeError();
+    g_active_strategy = &strategy;
+    g_active_strategy_is_player_one = strategyPlayersTurn;
     std::unordered_map<std::string, StrategyVerificationResult> memo;
-    return verifyStrategyImpl(strategy, position, strategyPlayersTurn, memo);
+    const StrategyVerificationResult result = verifyStrategyImpl(strategy, position, strategyPlayersTurn, memo);
+    g_active_strategy = nullptr;
+    return result;
 }

@@ -14,6 +14,7 @@
 #include <iostream> // This library lets us output to the console window that will be attached to the program when we run it
 #include <fstream> // This lets us write to output to files
 #include <vector> // This allows us to create dynamically sized lists of items called vectors
+#include <optional> // This lets us represent values that may or may not be present
 #include <set> // This lets us define sets of items
 #include <string> // This allows us to work with strings of text
 
@@ -79,12 +80,15 @@ namespace ManipulateMove
 		std::string result = std::to_string(move) + " = {"; // Start the string with the move number and an opening brace for the set representation
 		for (int i = 0; i < E.size; i++) { // For each element in the universal set E
 			if (hasElement(move, i)) { // If this element is in the move
-				result += std::to_string(i + 1) + ", "; // Add the element (add 1 to convert from 0-indexed to 1-indexed) and a comma and space to separate the elements
+				bool hasAnotherElement = false; // Assume this is the last element in the set
+				for (int j = i + 1; j < E.size; j++) { // Look for a later element that is also in the set
+					if (hasElement(move, j)) {
+						hasAnotherElement = true; // If we find one then this is not the last element
+						break;
+					}
+				}
+				result += std::to_string(i + 1) + (hasAnotherElement ? ", " : ""); // Add the element and only add a comma if another element follows it
 			}
-		}
-		if (result.size() > 2) { // If we added any elements to the string
-			result.pop_back(); // Remove the last space
-			result.pop_back(); // Remove the last comma
 		}
 		result += "}"; // Add a closing brace for the set representation
 		return result; // Return the final string representation of the move
@@ -107,14 +111,20 @@ namespace ManipulateMove
 		return result; // Return the final string representation of the move
 	}
 
-	// Convert the move into a full line of text like "P1: ●○○○ (1 = {1})"
-	// This is useful when we want to print a move in a readable way that contains the player number, symbols, bitmask number and set
-	inline std::string moveLine(UniversalSet E, Move move, int moveNumber, bool isPlayerOnesTurn) {
-		return
+	// Convert the move into a full line of text like "P1 move 1: ●○○○ (1 = {1})" and optionally attach a label like "rule name"
+	// This is useful when we want to print a move in a readable way that contains the player number, move number, symbols, bitmask number and set
+	inline std::string moveLine(UniversalSet E, Move move, int moveNumber, bool isPlayerOnesTurn, std::optional<std::string> moveLabel = std::nullopt) {
+		std::string line =
 			"P" + std::to_string(isPlayerOnesTurn ? 1 : 2) + // Player indicator
 			" move " + std::to_string(moveNumber) + ": " + // Move number
 			toSymbols(E, move, isPlayerOnesTurn) + // Symbols
 			" (" + toString(E, move) + ")"; // Set and bitmask number
+
+		if (moveLabel.has_value()) {
+			line += " \"" + *moveLabel + "\""; // Add the optional label at the end if one was provided
+		}
+
+		return line; // Return the final move line
 	}
 };
 

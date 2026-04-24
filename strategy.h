@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 template<typename Node>
@@ -76,6 +77,10 @@ struct PickedOnMoveNode : ElementTestNode {
 };
 
 struct IsSingletonNode : ElementTestNode {
+    bool eval(const Game& game, Element element) const override;
+};
+
+struct FailElementNode : ElementTestNode {
     bool eval(const Game& game, Element element) const override;
 };
 
@@ -284,6 +289,7 @@ struct Rule {
     Condition guard;
     MoveTest move;
     bool allow_illegal = false;
+    std::optional<std::string> name;
 };
 
 struct Strategy {
@@ -292,6 +298,7 @@ struct Strategy {
 
 ElementTest picked_on_move(int move_number);
 ElementTest picked_on_move(const IntExpr& move_number);
+extern const ElementTest fail;
 extern const ElementTest is_singleton;
 extern const ElementTest are_singleton;
 ElementTest operator~(const ElementTest& inner);
@@ -354,6 +361,7 @@ struct IfFrame {
     int id;
     Condition parent;
     Condition cond;
+    bool awaiting_else = false;
 };
 
 struct StrategyBuilder {
@@ -363,7 +371,10 @@ struct StrategyBuilder {
     int next_if_id = 0;
     int while_legal_depth = 0;
 
+    void flush_pending_ifs();
+    void flush_pending_ifs_above(int id);
     void pick(const MoveTest& m);
+    void pick(const MoveTest& m, const std::string& name);
     Strategy finish() const;
 };
 
@@ -397,14 +408,17 @@ struct WhileLegalScope {
 };
 
 #define IF(cond) if (IfScope _if_scope_{ builder, (cond) })
-#define ELSE else if (ElseScope _else_scope_{ builder })
-#define PICK(x) builder.pick(x)
+#define ELSE if (ElseScope _else_scope_{ builder })
+#define PICK(...) builder.pick(__VA_ARGS__)
 #define WHILE_LEGAL if (WhileLegalScope _while_legal_scope_{ builder })
 
 std::vector<Move> allowedMoves(const Strategy& strategy, const Game& position);
 std::vector<Move> allowedLegalMoves(const Strategy& strategy, const Game& position);
 std::vector<Move> allowedPrincipalLegalMoves(const Strategy& strategy, const Game& position);
 std::optional<Move> firstAllowedLegalMove(const Strategy& strategy, const Game& position);
+void clearStrategyRuntimeError();
+bool hasStrategyRuntimeError();
+std::string strategyRuntimeErrorMessage();
 void printAllowedMoves(const Strategy& strategy, const Game& position, std::ostream& out = std::cout);
 
 struct StrategyVerificationResult {
