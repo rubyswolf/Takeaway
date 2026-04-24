@@ -894,6 +894,41 @@ void showNoMatchingMoveErrorAndPause(const Game& position) {
     g_strategy_runtime_error = "no move matched the strategy rules";
 }
 
+void showSuchThatNoMatchErrorAndPause(const Game& position, const std::optional<std::string>& ruleName) {
+    configureConsoleForUnicode();
+    std::cout << "such_that did not match any move that met the condition";
+    if (ruleName.has_value()) {
+        std::cout << " for rule \"" << *ruleName << "\"";
+    }
+    std::cout << ".\n\n";
+    printHistory(position);
+    g_strategy_runtime_error = "such_that did not match any move that met the condition";
+}
+
+bool suchThatMatchedUnderlyingMovesButNoCondition(const MoveTest& test, const Game& position, const std::vector<Move>& candidates) {
+    const auto suchThat = std::dynamic_pointer_cast<SuchThatNode>(test.ptr);
+    if (!suchThat) {
+        return false;
+    }
+
+    bool matchedUnderlying = false;
+    for (Move candidate : candidates) {
+        if (!::eval(suchThat->move_test, position, candidate)) {
+            continue;
+        }
+
+        matchedUnderlying = true;
+
+        Game next = position;
+        next.playMove(candidate);
+        if (::eval(suchThat->condition, next)) {
+            return false;
+        }
+    }
+
+    return matchedUnderlying;
+}
+
 void throwIfRuleAllowsIllegalMoves(const Rule& rule, const Game& position) {
     for (Move candidate : position.allMoves()) {
         if (eval(rule.move, position, candidate) && !position.isMoveLegal(candidate)) {
@@ -927,6 +962,11 @@ std::vector<Move> allowedFromCandidates(const Strategy& strategy, const Game& po
 
         if (!result.empty()) {
             return result;
+        }
+
+        if (suchThatMatchedUnderlyingMovesButNoCondition(rule.move, position, candidates)) {
+            showSuchThatNoMatchErrorAndPause(position, rule.name);
+            return {};
         }
     }
 

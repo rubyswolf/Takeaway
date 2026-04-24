@@ -35,10 +35,10 @@ Strategy buildN4WinningStrategy() {
     return builder.finish();
 }
 
-Strategy buildUniversalStrategy() {
+Strategy buildUniversalishStrategy() {
     StrategyBuilder builder;
 
-#include "universal strategy.cpp"
+#include "universalish strategy.cpp"
 
     return builder.finish();
 }
@@ -100,7 +100,7 @@ int main() {
     configureConsoleForUnicode();
     testStrategy("winning n=3", 3, buildN3WinningStrategy());
     testStrategy("winning n=4", 4, buildN4WinningStrategy());
-    testStrategy("universal n=3", 3, buildUniversalStrategy());
-    testStrategy("universal n=4", 4, buildUniversalStrategy());
-    testStrategy("universal n=5", 5, buildUniversalStrategy());
+    testStrategy("universalish n=3", 3, buildUniversalishStrategy());
+    testStrategy("universalish n=4", 4, buildUniversalishStrategy());
+    testStrategy("universalish n=5", 5, buildUniversalishStrategy());
 }

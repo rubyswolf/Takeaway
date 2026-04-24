@@ -1,5 +1,11 @@
 #include "strategy.h"
 
+//#define strategyScriptFor1 "custom strategy 1.cpp"
+//#define strategyScriptFor2 "custom strategy 2.cpp"
+
+#define strategyScriptFor1 "universalish strategy.cpp"
+#define strategyScriptFor2 "universalish strategy.cpp"
+
 #include <conio.h>
 #include <cstdlib>
 #include <locale.h>
@@ -24,7 +30,7 @@ enum class PlayerMode {
 Strategy buildCustomStrategy1() {
     StrategyBuilder builder;
 
-#include "custom strategy 1.cpp"
+#include strategyScriptFor1
 
     return builder.finish();
 }
@@ -32,7 +38,7 @@ Strategy buildCustomStrategy1() {
 Strategy buildCustomStrategy2() {
     StrategyBuilder builder;
 
-#include "custom strategy 2.cpp"
+#include strategyScriptFor2
 
     return builder.finish();
 }
@@ -65,22 +71,22 @@ void clearScreen() {
     SetConsoleCursorPosition(console, home);
 }
 
-std::string modeLabel(PlayerMode mode, int playerNumber) {
+std::string modeLabel(PlayerMode mode, std::string strategyScript) {
     if (mode == PlayerMode::Manual) {
         return "Manual";
     }
 
-    return "Strategy (custom strategy " + std::to_string(playerNumber) + ".cpp)";
+    return "Strategy (" + strategyScript + ")";
 }
 
-PlayerMode choosePlayerMode(int playerNumber) {
+PlayerMode choosePlayerMode(bool isPlayerOne) {
     int selection = 0;
 
     while (true) {
         clearScreen();
-        std::cout << "Select Player " << playerNumber << " mode\n\n";
+        std::cout << "Select Player " << (isPlayerOne ? "1" : "2") << " mode\n\n";
         std::cout << (selection == 0 ? "> " : "  ") << "Manual\n";
-        std::cout << (selection == 1 ? "> " : "  ") << "Strategy (custom strategy " << playerNumber << ".cpp)\n";
+        std::cout << (selection == 1 ? "> " : "  ") << "Strategy (" << (isPlayerOne ? strategyScriptFor1 : strategyScriptFor2) << ")\n";
         std::cout << "\nUse Up/Down arrows and Enter.\n";
 
         const int key = _getch();
@@ -150,8 +156,8 @@ void renderGame(
 
     std::cout << "Takeaway\n";
     std::cout << "E size: " << game.E.size << "\n";
-    std::cout << "Player 1: " << modeLabel(playerOneMode, 1) << "\n";
-    std::cout << "Player 2: " << modeLabel(playerTwoMode, 2) << "\n";
+    std::cout << "Player 1: " << modeLabel(playerOneMode, strategyScriptFor1) << "\n";
+    std::cout << "Player 2: " << modeLabel(playerTwoMode, strategyScriptFor2) << "\n";
     std::cout << "Current player: P" << currentPlayer << "\n\n";
 
     std::cout << "History:\n";
@@ -287,8 +293,13 @@ Move chooseStrategyMove(
 int main() {
     configureConsoleForUnicode();
 
-    const PlayerMode playerOneMode = choosePlayerMode(1);
-    const PlayerMode playerTwoMode = choosePlayerMode(2);
+    // User gets to choose modes
+    const PlayerMode playerOneMode = choosePlayerMode(true);
+    const PlayerMode playerTwoMode = choosePlayerMode(false);
+
+    //const PlayerMode playerOneMode = PlayerMode::Manual;
+    //const PlayerMode playerTwoMode = PlayerMode::Strategy;
+
     const int n = promptUniversalSetSize();
 
     const Strategy playerOneStrategy = buildCustomStrategy1();

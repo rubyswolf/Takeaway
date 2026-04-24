@@ -10,3 +10,8 @@ IF (safe_full_coverage.ever_after(singletonMove)) {
 IF (!full_coverage) {
    PICK(all_elements(exposed), "Cover all exposed elements to create full coverage");
 }
+IF(full_coverage.ever_after(anything))
+{
+	PICK(anything.such_that(full_coverage), "Pick any move that maintains full coverage");
+}
+PICK(anything, "Pick any legal move as a last resort");
