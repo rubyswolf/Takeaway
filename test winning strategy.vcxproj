@@ -26,10 +26,6 @@
     <ClInclude Include="strategy.h" />
     <ClInclude Include="takeaway.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="n3 winning strategy.cpp" />
-    <None Include="n4 winning strategy.cpp" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

@@ -4,6 +4,11 @@
 #include <iostream>
 #include <string>
 #include <vector>
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include <windows.h>
 
 namespace {
@@ -97,4 +102,5 @@ int main() {
     testStrategy("winning n=4", 4, buildN4WinningStrategy());
     testStrategy("universal n=3", 3, buildUniversalStrategy());
     testStrategy("universal n=4", 4, buildUniversalStrategy());
+    testStrategy("universal n=5", 5, buildUniversalStrategy());
 }

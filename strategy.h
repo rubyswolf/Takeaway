@@ -8,6 +8,14 @@
 #include <string>
 #include <vector>
 
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
+
 template<typename Node>
 using Ptr = std::shared_ptr<Node>;
 
@@ -15,11 +23,13 @@ struct ElementTestNode;
 struct MoveTestNode;
 struct ConditionNode;
 struct IntNode;
+struct ElementIntNode;
 
 struct ElementTest;
 struct MoveTest;
 struct Condition;
 struct IntExpr;
+struct ElementIntExpr;
 
 struct ElementTestWhenBuilder;
 struct MoveTestWhenBuilder;
@@ -31,23 +41,47 @@ struct ElementTest {
 };
 
 struct MoveTest {
+    struct TimesPickedProxy {
+        const MoveTest* owner = nullptr;
+
+        operator ElementIntExpr() const;
+    };
+
     Ptr<MoveTestNode> ptr;
+    TimesPickedProxy times_picked{ this };
+
+    MoveTest() = default;
+    explicit MoveTest(const Ptr<MoveTestNode>& ptr) : ptr(ptr), times_picked{ this } {}
+    MoveTest(const MoveTest& other) : ptr(other.ptr), times_picked{ this } {}
+    MoveTest& operator=(const MoveTest& other) {
+        ptr = other.ptr;
+        times_picked.owner = this;
+        return *this;
+    }
 
     MoveTestWhenBuilder when(const Condition& cond) const;
 };
 
 struct Condition {
     Ptr<ConditionNode> ptr;
+
+    Condition always_after(const MoveTest& test) const;
+    Condition ever_after(const MoveTest& test) const;
 };
 
 struct IntExpr {
     Ptr<IntNode> ptr;
 };
 
+struct ElementIntExpr {
+    Ptr<ElementIntNode> ptr;
+};
+
 bool eval(const ElementTest& test, const Game& game, Element element);
 bool eval(const MoveTest& test, const Game& game, Move move);
 bool eval(const Condition& condition, const Game& game);
 int eval(const IntExpr& expr, const Game& game);
+int eval(const ElementIntExpr& expr, const Game& game, Element element);
 
 struct ElementTestNode {
     virtual ~ElementTestNode() = default;
@@ -69,11 +103,32 @@ struct IntNode {
     virtual int eval(const Game& game) const = 0;
 };
 
+struct ElementIntNode {
+    virtual ~ElementIntNode() = default;
+    virtual int eval(const Game& game, Element element) const = 0;
+};
+
 struct PickedOnMoveNode : ElementTestNode {
     IntExpr move_number;
 
     explicit PickedOnMoveNode(const IntExpr& move_number);
     bool eval(const Game& game, Element element) const override;
+};
+
+struct PickedInAnyNode : ElementTestNode {
+    enum PlayerFilter { AnyPlayer, Me, Opponent } player_filter;
+
+    MoveTest test;
+
+    PickedInAnyNode(const MoveTest& test, PlayerFilter player_filter);
+    bool eval(const Game& game, Element element) const override;
+};
+
+struct TimesPickedCountNode : ElementIntNode {
+    MoveTest test;
+
+    explicit TimesPickedCountNode(const MoveTest& test);
+    int eval(const Game& game, Element element) const override;
 };
 
 struct IsSingletonNode : ElementTestNode {
@@ -107,6 +162,13 @@ struct AllThatNode : MoveTestNode {
     ElementTest test;
 
     explicit AllThatNode(const ElementTest& test);
+    bool eval(const Game& game, Move move) const override;
+};
+
+struct OnlyFromNode : MoveTestNode {
+    ElementTest test;
+
+    explicit OnlyFromNode(const ElementTest& test);
     bool eval(const Game& game, Move move) const override;
 };
 
@@ -219,6 +281,16 @@ struct IsLegalNode : ConditionNode {
     bool eval(const Game& game) const override;
 };
 
+struct QuantifiedMoveConditionNode : ConditionNode {
+    enum Quantifier { Always, Ever } quantifier;
+
+    Condition condition;
+    MoveTest test;
+
+    QuantifiedMoveConditionNode(const Condition& condition, const MoveTest& test, Quantifier quantifier);
+    bool eval(const Game& game) const override;
+};
+
 struct CompareIntNode : ConditionNode {
     enum Comparison { EQ, NEQ } op;
 
@@ -307,6 +379,32 @@ struct SubtractIntNode : IntNode {
     int eval(const Game& game) const override;
 };
 
+struct MinElementIntNode : IntNode {
+    ElementIntExpr expr;
+    std::optional<ElementTest> domain;
+
+    explicit MinElementIntNode(const ElementIntExpr& expr, std::optional<ElementTest> domain = std::nullopt);
+    int eval(const Game& game) const override;
+};
+
+struct MaxElementIntNode : IntNode {
+    ElementIntExpr expr;
+    std::optional<ElementTest> domain;
+
+    explicit MaxElementIntNode(const ElementIntExpr& expr, std::optional<ElementTest> domain = std::nullopt);
+    int eval(const Game& game) const override;
+};
+
+struct CompareElementIntNode : ElementTestNode {
+    enum Comparison { EQ, NEQ } op;
+
+    ElementIntExpr lhs;
+    IntExpr rhs;
+
+    CompareElementIntNode(const ElementIntExpr& lhs, const IntExpr& rhs, Comparison op);
+    bool eval(const Game& game, Element element) const override;
+};
+
 struct Rule {
     Condition guard;
     MoveTest move;
@@ -319,6 +417,9 @@ struct Strategy {
 
 ElementTest picked_on_move(int move_number);
 ElementTest picked_on_move(const IntExpr& move_number);
+ElementTest picked_in_any(const MoveTest& test);
+ElementTest picked_by_me(const MoveTest& test);
+ElementTest picked_by_opponent(const MoveTest& test);
 extern const ElementTest fail;
 extern const ElementTest is_singleton;
 extern const ElementTest are_singleton;
@@ -328,6 +429,7 @@ ElementTest operator|(const ElementTest& a, const ElementTest& b);
 
 MoveTest all_elements(const ElementTest& test);
 MoveTest all_that(const ElementTest& test);
+MoveTest only_from(const ElementTest& test);
 MoveTest all_but(int n, const ElementTest& test);
 MoveTest all_but(const IntExpr& n, const ElementTest& test);
 MoveTest any_from(int n, const ElementTest& test);
@@ -359,8 +461,19 @@ Condition operator!=(int lhs, const IntExpr& rhs);
 Condition operator==(const Condition& lhs, const Condition& rhs);
 Condition operator!=(const Condition& lhs, const Condition& rhs);
 
+ElementTest operator==(const ElementIntExpr& lhs, const IntExpr& rhs);
+ElementTest operator==(const ElementIntExpr& lhs, int rhs);
+ElementTest operator==(int lhs, const ElementIntExpr& rhs);
+ElementTest operator!=(const ElementIntExpr& lhs, const IntExpr& rhs);
+ElementTest operator!=(const ElementIntExpr& lhs, int rhs);
+ElementTest operator!=(int lhs, const ElementIntExpr& rhs);
+
 IntExpr number_of_elements(const ElementTest& test);
 IntExpr move_where(const MoveTest& test);
+IntExpr min(const ElementIntExpr& expr);
+IntExpr min(const ElementIntExpr& expr, const ElementTest& domain);
+IntExpr max(const ElementIntExpr& expr);
+IntExpr max(const ElementIntExpr& expr, const ElementTest& domain);
 IntExpr operator+(const IntExpr& lhs, const IntExpr& rhs);
 IntExpr operator+(const IntExpr& lhs, int rhs);
 IntExpr operator+(int lhs, const IntExpr& rhs);

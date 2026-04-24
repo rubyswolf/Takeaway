@@ -4,6 +4,11 @@
 #include <locale.h>
 #include <sstream>
 #include <unordered_map>
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include <windows.h>
 
 #ifdef TRUE
@@ -12,6 +17,14 @@
 
 #ifdef FALSE
 #undef FALSE
+#endif
+
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
 #endif
 
 namespace {
@@ -29,6 +42,42 @@ bool PickedOnMoveNode::eval(const Game& game, Element element) const {
     }
 
     return ManipulateMove::hasElement(game[moveNumber - 1], element);
+}
+
+PickedInAnyNode::PickedInAnyNode(const MoveTest& test, PlayerFilter player_filter)
+    : player_filter(player_filter), test(test) {}
+
+bool PickedInAnyNode::eval(const Game& game, Element element) const {
+    for (int i = 0; i < static_cast<int>(game.size()); i++) {
+        const bool isMyMove = (i % 2) == (game.size() % 2);
+        if (player_filter == Me && !isMyMove) {
+            continue;
+        }
+        if (player_filter == Opponent && isMyMove) {
+            continue;
+        }
+
+        const Move move = game[i];
+        if (::eval(test, game, move) && ManipulateMove::hasElement(move, element)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+TimesPickedCountNode::TimesPickedCountNode(const MoveTest& test) : test(test) {}
+
+int TimesPickedCountNode::eval(const Game& game, Element element) const {
+    int count = 0;
+
+    for (Move move : game) {
+        if (::eval(test, game, move) && ManipulateMove::hasElement(move, element)) {
+            count++;
+        }
+    }
+
+    return count;
 }
 
 bool IsSingletonNode::eval(const Game& game, Element element) const {
@@ -78,6 +127,18 @@ AllThatNode::AllThatNode(const ElementTest& test) : test(test) {}
 bool AllThatNode::eval(const Game& game, Move move) const {
     for (Element element = 0; element < game.E.size; element++) {
         if (::eval(test, game, element) && !ManipulateMove::hasElement(move, element)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+OnlyFromNode::OnlyFromNode(const ElementTest& test) : test(test) {}
+
+bool OnlyFromNode::eval(const Game& game, Move move) const {
+    for (Element element = 0; element < game.E.size; element++) {
+        if (ManipulateMove::hasElement(move, element) && !::eval(test, game, element)) {
             return false;
         }
     }
@@ -215,6 +276,38 @@ bool IsLegalNode::eval(const Game& game) const {
     return false;
 }
 
+QuantifiedMoveConditionNode::QuantifiedMoveConditionNode(
+    const Condition& condition,
+    const MoveTest& test,
+    QuantifiedMoveConditionNode::Quantifier quantifier)
+    : quantifier(quantifier), condition(condition), test(test) {}
+
+bool QuantifiedMoveConditionNode::eval(const Game& game) const {
+    bool matchedAny = false;
+
+    for (Move move : game.legalMoves()) {
+        if (!::eval(test, game, move)) {
+            continue;
+        }
+
+        matchedAny = true;
+
+        Game next = game;
+        next.playMove(move);
+        const bool conditionHolds = ::eval(condition, next);
+
+        if (quantifier == QuantifiedMoveConditionNode::Ever && conditionHolds) {
+            return true;
+        }
+
+        if (quantifier == QuantifiedMoveConditionNode::Always && !conditionHolds) {
+            return false;
+        }
+    }
+
+    return quantifier == QuantifiedMoveConditionNode::Always ? true : false;
+}
+
 CompareIntNode::CompareIntNode(const IntExpr& lhs, const IntExpr& rhs, Comparison op)
     : op(op), lhs(lhs), rhs(rhs) {}
 
@@ -248,6 +341,59 @@ CompareConditionsNode::CompareConditionsNode(const Condition& lhs, const Conditi
 bool CompareConditionsNode::eval(const Game& game) const {
     const bool left = ::eval(lhs, game);
     const bool right = ::eval(rhs, game);
+    return op == EQ ? left == right : left != right;
+}
+
+MinElementIntNode::MinElementIntNode(const ElementIntExpr& expr, std::optional<ElementTest> domain)
+    : expr(expr), domain(domain) {}
+
+int MinElementIntNode::eval(const Game& game) const {
+    int result = 0;
+    bool found = false;
+
+    for (Element element = 0; element < game.E.size; element++) {
+        if (domain.has_value() && !::eval(*domain, game, element)) {
+            continue;
+        }
+
+        const int value = ::eval(expr, game, element);
+        if (!found || value < result) {
+            result = value;
+            found = true;
+        }
+    }
+
+    return result;
+}
+
+MaxElementIntNode::MaxElementIntNode(const ElementIntExpr& expr, std::optional<ElementTest> domain)
+    : expr(expr), domain(domain) {}
+
+int MaxElementIntNode::eval(const Game& game) const {
+    int result = 0;
+    bool found = false;
+
+    for (Element element = 0; element < game.E.size; element++) {
+        if (domain.has_value() && !::eval(*domain, game, element)) {
+            continue;
+        }
+
+        const int value = ::eval(expr, game, element);
+        if (!found || value > result) {
+            result = value;
+            found = true;
+        }
+    }
+
+    return result;
+}
+
+CompareElementIntNode::CompareElementIntNode(const ElementIntExpr& lhs, const IntExpr& rhs, Comparison op)
+    : op(op), lhs(lhs), rhs(rhs) {}
+
+bool CompareElementIntNode::eval(const Game& game, Element element) const {
+    const int left = ::eval(lhs, game, element);
+    const int right = ::eval(rhs, game);
     return op == EQ ? left == right : left != right;
 }
 
@@ -322,6 +468,18 @@ ElementTest picked_on_move(const IntExpr& move_number) {
     return ElementTest{ std::make_shared<PickedOnMoveNode>(move_number) };
 }
 
+ElementTest picked_in_any(const MoveTest& test) {
+    return ElementTest{ std::make_shared<PickedInAnyNode>(test, PickedInAnyNode::AnyPlayer) };
+}
+
+ElementTest picked_by_me(const MoveTest& test) {
+    return ElementTest{ std::make_shared<PickedInAnyNode>(test, PickedInAnyNode::Me) };
+}
+
+ElementTest picked_by_opponent(const MoveTest& test) {
+    return ElementTest{ std::make_shared<PickedInAnyNode>(test, PickedInAnyNode::Opponent) };
+}
+
 const ElementTest fail = ElementTest{ std::make_shared<FailElementNode>() };
 const ElementTest is_singleton = ElementTest{ std::make_shared<IsSingletonNode>() };
 const ElementTest are_singleton = is_singleton;
@@ -344,6 +502,10 @@ MoveTest all_elements(const ElementTest& test) {
 
 MoveTest all_that(const ElementTest& test) {
     return MoveTest{ std::make_shared<AllThatNode>(test) };
+}
+
+MoveTest only_from(const ElementTest& test) {
+    return MoveTest{ std::make_shared<OnlyFromNode>(test) };
 }
 
 MoveTest all_but(int n, const ElementTest& test) {
@@ -395,6 +557,14 @@ Condition is_legal(const MoveTest& test) {
     return Condition{ std::make_shared<IsLegalNode>(test) };
 }
 
+Condition Condition::always_after(const MoveTest& test) const {
+    return Condition{ std::make_shared<QuantifiedMoveConditionNode>(*this, test, QuantifiedMoveConditionNode::Always) };
+}
+
+Condition Condition::ever_after(const MoveTest& test) const {
+    return Condition{ std::make_shared<QuantifiedMoveConditionNode>(*this, test, QuantifiedMoveConditionNode::Ever) };
+}
+
 Condition operator!(const Condition& inner) {
     return Condition{ std::make_shared<NotConditionNode>(inner) };
 }
@@ -439,12 +609,52 @@ Condition operator!=(const Condition& lhs, const Condition& rhs) {
     return Condition{ std::make_shared<CompareConditionsNode>(lhs, rhs, CompareConditionsNode::NEQ) };
 }
 
+ElementTest operator==(const ElementIntExpr& lhs, const IntExpr& rhs) {
+    return ElementTest{ std::make_shared<CompareElementIntNode>(lhs, rhs, CompareElementIntNode::EQ) };
+}
+
+ElementTest operator==(const ElementIntExpr& lhs, int rhs) {
+    return lhs == literal_int(rhs);
+}
+
+ElementTest operator==(int lhs, const ElementIntExpr& rhs) {
+    return rhs == lhs;
+}
+
+ElementTest operator!=(const ElementIntExpr& lhs, const IntExpr& rhs) {
+    return ElementTest{ std::make_shared<CompareElementIntNode>(lhs, rhs, CompareElementIntNode::NEQ) };
+}
+
+ElementTest operator!=(const ElementIntExpr& lhs, int rhs) {
+    return lhs != literal_int(rhs);
+}
+
+ElementTest operator!=(int lhs, const ElementIntExpr& rhs) {
+    return rhs != lhs;
+}
+
 IntExpr number_of_elements(const ElementTest& test) {
     return IntExpr{ std::make_shared<CountElementsNode>(test) };
 }
 
 IntExpr move_where(const MoveTest& test) {
     return IntExpr{ std::make_shared<MoveWhereNode>(test) };
+}
+
+IntExpr min(const ElementIntExpr& expr) {
+    return IntExpr{ std::make_shared<MinElementIntNode>(expr) };
+}
+
+IntExpr min(const ElementIntExpr& expr, const ElementTest& domain) {
+    return IntExpr{ std::make_shared<MinElementIntNode>(expr, domain) };
+}
+
+IntExpr max(const ElementIntExpr& expr) {
+    return IntExpr{ std::make_shared<MaxElementIntNode>(expr) };
+}
+
+IntExpr max(const ElementIntExpr& expr, const ElementTest& domain) {
+    return IntExpr{ std::make_shared<MaxElementIntNode>(expr, domain) };
 }
 
 IntExpr operator+(const IntExpr& lhs, const IntExpr& rhs) {
@@ -488,6 +698,10 @@ ElementTestWhenBuilder ElementTest::when(const Condition& cond) const {
 
 MoveTestWhenBuilder MoveTest::when(const Condition& cond) const {
     return MoveTestWhenBuilder{ *this, cond };
+}
+
+MoveTest::TimesPickedProxy::operator ElementIntExpr() const {
+    return ElementIntExpr{ std::make_shared<TimesPickedCountNode>(*owner) };
 }
 
 void StrategyBuilder::flush_pending_ifs() {
@@ -564,6 +778,10 @@ bool eval(const Condition& condition, const Game& game) {
 
 int eval(const IntExpr& expr, const Game& game) {
     return expr.ptr->eval(game);
+}
+
+int eval(const ElementIntExpr& expr, const Game& game, Element element) {
+    return expr.ptr->eval(game, element);
 }
 
 namespace {
