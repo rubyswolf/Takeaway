@@ -96,6 +96,10 @@ bool FailElementNode::eval(const Game&, Element) const {
     return false;
 }
 
+bool PassElementNode::eval(const Game&, Element) const {
+    return true;
+}
+
 bool AnythingNode::eval(const Game& game, Move move) const {
     return game.isMoveLegal(move);
 }
@@ -230,6 +234,19 @@ SelectMoveTestNode::SelectMoveTestNode(const Condition& cond, const MoveTest& a,
 
 bool SelectMoveTestNode::eval(const Game& game, Move move) const {
     return ::eval(cond, game) ? ::eval(a, game, move) : ::eval(b, game, move);
+}
+
+SuchThatNode::SuchThatNode(const MoveTest& move_test, const Condition& condition)
+    : move_test(move_test), condition(condition) {}
+
+bool SuchThatNode::eval(const Game& game, Move move) const {
+    if (!::eval(move_test, game, move)) {
+        return false;
+    }
+
+    Game next = game;
+    next.playMove(move);
+    return ::eval(condition, next);
 }
 
 bool TrueNode::eval(const Game&) const {
@@ -481,6 +498,7 @@ ElementTest picked_by_opponent(const MoveTest& test) {
 }
 
 const ElementTest fail = ElementTest{ std::make_shared<FailElementNode>() };
+const ElementTest pass = ElementTest{ std::make_shared<PassElementNode>() };
 const ElementTest is_singleton = ElementTest{ std::make_shared<IsSingletonNode>() };
 const ElementTest are_singleton = is_singleton;
 
@@ -698,6 +716,10 @@ ElementTestWhenBuilder ElementTest::when(const Condition& cond) const {
 
 MoveTestWhenBuilder MoveTest::when(const Condition& cond) const {
     return MoveTestWhenBuilder{ *this, cond };
+}
+
+MoveTest MoveTest::such_that(const Condition& cond) const {
+    return MoveTest{ std::make_shared<SuchThatNode>(*this, cond) };
 }
 
 MoveTest::TimesPickedProxy::operator ElementIntExpr() const {

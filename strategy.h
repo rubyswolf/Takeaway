@@ -60,6 +60,7 @@ struct MoveTest {
     }
 
     MoveTestWhenBuilder when(const Condition& cond) const;
+    MoveTest such_that(const Condition& cond) const;
 };
 
 struct Condition {
@@ -136,6 +137,10 @@ struct IsSingletonNode : ElementTestNode {
 };
 
 struct FailElementNode : ElementTestNode {
+    bool eval(const Game& game, Element element) const override;
+};
+
+struct PassElementNode : ElementTestNode {
     bool eval(const Game& game, Element element) const override;
 };
 
@@ -249,6 +254,14 @@ struct SelectMoveTestNode : MoveTestNode {
     MoveTest b;
 
     SelectMoveTestNode(const Condition& cond, const MoveTest& a, const MoveTest& b);
+    bool eval(const Game& game, Move move) const override;
+};
+
+struct SuchThatNode : MoveTestNode {
+    MoveTest move_test;
+    Condition condition;
+
+    SuchThatNode(const MoveTest& move_test, const Condition& condition);
     bool eval(const Game& game, Move move) const override;
 };
 
@@ -421,6 +434,7 @@ ElementTest picked_in_any(const MoveTest& test);
 ElementTest picked_by_me(const MoveTest& test);
 ElementTest picked_by_opponent(const MoveTest& test);
 extern const ElementTest fail;
+extern const ElementTest pass;
 extern const ElementTest is_singleton;
 extern const ElementTest are_singleton;
 ElementTest operator~(const ElementTest& inner);
