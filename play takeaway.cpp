@@ -25,6 +25,9 @@ enum class PlayerMode {
     Strategy
 };
 
+const Strategy* g_playerOneStrategy = nullptr;
+const Strategy* g_playerTwoStrategy = nullptr;
+
 Strategy buildCustomStrategy1() {
     StrategyBuilder builder;
 
@@ -126,13 +129,24 @@ int promptUniversalSetSize() {
     }
 }
 
-std::vector<std::string> historyLines(const Game& game) {
+std::vector<std::string> historyLines(const Game& game, PlayerMode playerOneMode, PlayerMode playerTwoMode) {
     std::vector<std::string> lines;
     bool isPlayerOnesTurn = true;
     int moveNumber = 1;
+    Game position{ game.E };
 
     for (Move move : game) {
-        lines.push_back(ManipulateMove::moveLine(game.E, move, moveNumber, isPlayerOnesTurn));
+        std::optional<std::string> ruleName = std::nullopt;
+
+        if (isPlayerOnesTurn && playerOneMode == PlayerMode::Strategy && g_playerOneStrategy != nullptr) {
+            ruleName = ruleNameForMove(*g_playerOneStrategy, position, move);
+        }
+        else if (!isPlayerOnesTurn && playerTwoMode == PlayerMode::Strategy && g_playerTwoStrategy != nullptr) {
+            ruleName = ruleNameForMove(*g_playerTwoStrategy, position, move);
+        }
+
+        lines.push_back(ManipulateMove::moveLine(game.E, move, moveNumber, isPlayerOnesTurn, ruleName));
+        position.playMove(move);
         isPlayerOnesTurn = !isPlayerOnesTurn;
         moveNumber++;
     }
@@ -159,7 +173,7 @@ void renderGame(
     std::cout << "Current player: P" << currentPlayer << "\n\n";
 
     std::cout << "History:\n";
-    const std::vector<std::string> lines = historyLines(game);
+    const std::vector<std::string> lines = historyLines(game, playerOneMode, playerTwoMode);
     if (lines.empty()) {
         std::cout << "  (empty)\n";
     }
@@ -275,14 +289,20 @@ Move chooseStrategyMove(
         return -1;
     }
 
+    const std::optional<std::string> ruleName = ruleNameForMove(strategy, game, *move);
+
     renderGame(
         game,
         playerOneMode,
         playerTwoMode,
         "",
-        ManipulateMove::moveLine(game.E, *move, static_cast<int>(game.size()) + 1, isPlayerOnesTurn) + ".");
-    std::cout << "Press any key to continue.";
-    _getch();
+        ManipulateMove::moveLine(
+            game.E,
+            *move,
+            static_cast<int>(game.size()) + 1,
+            isPlayerOnesTurn,
+            ruleName
+        ) + ".");
 
     return *move;
 }
@@ -298,6 +318,8 @@ int main() {
 
     const Strategy playerOneStrategy = buildCustomStrategy1();
     const Strategy playerTwoStrategy = buildCustomStrategy2();
+    g_playerOneStrategy = &playerOneStrategy;
+    g_playerTwoStrategy = &playerTwoStrategy;
 
     Game game{ UniversalSet(n) };
 
