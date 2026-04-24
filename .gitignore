@@ -1,3 +1,4 @@
 .vs
 takeaway
 x64
+*.obj

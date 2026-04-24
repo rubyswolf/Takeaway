@@ -103,11 +103,26 @@ struct AllElementsNode : MoveTestNode {
     bool eval(const Game& game, Move move) const override;
 };
 
+struct AllThatNode : MoveTestNode {
+    ElementTest test;
+
+    explicit AllThatNode(const ElementTest& test);
+    bool eval(const Game& game, Move move) const override;
+};
+
 struct AnyFromNode : MoveTestNode {
     IntExpr n;
     ElementTest test;
 
     AnyFromNode(const IntExpr& n, const ElementTest& test);
+    bool eval(const Game& game, Move move) const override;
+};
+
+struct AllButNode : MoveTestNode {
+    IntExpr n;
+    ElementTest test;
+
+    AllButNode(const IntExpr& n, const ElementTest& test);
     bool eval(const Game& game, Move move) const override;
 };
 
@@ -194,6 +209,13 @@ struct HasBeenPlayedNode : ConditionNode {
     MoveTest test;
 
     explicit HasBeenPlayedNode(const MoveTest& test);
+    bool eval(const Game& game) const override;
+};
+
+struct IsLegalNode : ConditionNode {
+    MoveTest test;
+
+    explicit IsLegalNode(const MoveTest& test);
     bool eval(const Game& game) const override;
 };
 
@@ -288,7 +310,6 @@ struct SubtractIntNode : IntNode {
 struct Rule {
     Condition guard;
     MoveTest move;
-    bool allow_illegal = false;
     std::optional<std::string> name;
 };
 
@@ -306,6 +327,9 @@ ElementTest operator&(const ElementTest& a, const ElementTest& b);
 ElementTest operator|(const ElementTest& a, const ElementTest& b);
 
 MoveTest all_elements(const ElementTest& test);
+MoveTest all_that(const ElementTest& test);
+MoveTest all_but(int n, const ElementTest& test);
+MoveTest all_but(const IntExpr& n, const ElementTest& test);
 MoveTest any_from(int n, const ElementTest& test);
 MoveTest any_from(const IntExpr& n, const ElementTest& test);
 MoveTest operator~(const MoveTest& inner);
@@ -316,10 +340,13 @@ extern const MoveTest anything;
 extern const MoveTest nothing;
 extern const MoveTest everything;
 
+extern const Condition TRUE;
+extern const Condition FALSE;
 Condition true_condition();
 Condition false_condition();
 Condition there_is_an_element(const ElementTest& test);
 Condition has_been_played(const MoveTest& test);
+Condition is_legal(const MoveTest& test);
 Condition operator!(const Condition& inner);
 Condition operator&&(const Condition& a, const Condition& b);
 Condition operator||(const Condition& a, const Condition& b);
@@ -365,11 +392,10 @@ struct IfFrame {
 };
 
 struct StrategyBuilder {
-    Condition current = true_condition();
+    Condition current = TRUE;
     std::vector<Rule> rules;
     std::vector<IfFrame> if_stack;
     int next_if_id = 0;
-    int while_legal_depth = 0;
 
     void flush_pending_ifs();
     void flush_pending_ifs_above(int id);
@@ -398,24 +424,15 @@ struct ElseScope {
     explicit operator bool() const { return true; }
 };
 
-struct WhileLegalScope {
-    StrategyBuilder& builder;
-
-    explicit WhileLegalScope(StrategyBuilder& builder);
-    ~WhileLegalScope();
-
-    explicit operator bool() const { return true; }
-};
-
 #define IF(cond) if (IfScope _if_scope_{ builder, (cond) })
 #define ELSE if (ElseScope _else_scope_{ builder })
 #define PICK(...) builder.pick(__VA_ARGS__)
-#define WHILE_LEGAL if (WhileLegalScope _while_legal_scope_{ builder })
 
 std::vector<Move> allowedMoves(const Strategy& strategy, const Game& position);
 std::vector<Move> allowedLegalMoves(const Strategy& strategy, const Game& position);
 std::vector<Move> allowedPrincipalLegalMoves(const Strategy& strategy, const Game& position);
 std::optional<Move> firstAllowedLegalMove(const Strategy& strategy, const Game& position);
+std::optional<std::string> ruleNameForMove(const Strategy& strategy, const Game& position, Move move);
 void clearStrategyRuntimeError();
 bool hasStrategyRuntimeError();
 std::string strategyRuntimeErrorMessage();

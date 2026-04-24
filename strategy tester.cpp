@@ -38,14 +38,30 @@ Strategy buildUniversalStrategy() {
     return builder.finish();
 }
 
-void printCounterexampleLine(const Game& start, const std::vector<Move>& line) {
+void printCounterexampleLine(
+    const Game& start,
+    const std::vector<Move>& line,
+    const Strategy& strategy,
+    bool strategyPlayersTurn) {
+
     Game position = start;
     bool playerOnesTurn = true;
 
     for (Move move : line) {
+        const std::optional<std::string> ruleName =
+            (playerOnesTurn == strategyPlayersTurn)
+            ? ruleNameForMove(strategy, position, move)
+            : std::nullopt;
+
         std::cout
             << "  "
-            << ManipulateMove::moveLine(position.E, move, static_cast<int>(position.size()) + 1, playerOnesTurn)
+            << ManipulateMove::moveLine(
+                position.E,
+                move,
+                static_cast<int>(position.size()) + 1,
+                playerOnesTurn,
+                ruleName
+            )
             << '\n';
 
         position.playMove(move);
@@ -69,7 +85,7 @@ void testStrategy(const std::string& label, int n, const Strategy& strategy) {
     }
     else {
         std::cout << "  counterexample found\n";
-        printCounterexampleLine(start, result.line);
+        printCounterexampleLine(start, result.line, strategy, false);
     }
 
     std::cout << '\n';

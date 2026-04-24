@@ -125,6 +125,4 @@ IF (move1HasSize2) {
     }
 }
 
-WHILE_LEGAL {
-    PICK(anything, "Arbitrary legal move");
-}
+PICK(anything, "Arbitrary legal move");

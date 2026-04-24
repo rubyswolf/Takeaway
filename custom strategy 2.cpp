@@ -1,3 +1,1 @@
-WHILE_LEGAL {
-    PICK(anything);
-}
+PICK(anything);

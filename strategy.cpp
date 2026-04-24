@@ -6,9 +6,17 @@
 #include <unordered_map>
 #include <windows.h>
 
+#ifdef TRUE
+#undef TRUE
+#endif
+
+#ifdef FALSE
+#undef FALSE
+#endif
+
 namespace {
 void showMoveWhereErrorAndPause(const Game& position);
-std::optional<std::string> findRuleNameForMove(const Strategy& strategy, const Game& position, Move move);
+std::optional<std::string> findRuleNameForMoveImpl(const Strategy& strategy, const Game& position, Move move);
 }
 
 PickedOnMoveNode::PickedOnMoveNode(const IntExpr& move_number) : move_number(move_number) {}
@@ -65,6 +73,18 @@ bool AllElementsNode::eval(const Game& game, Move move) const {
     return true;
 }
 
+AllThatNode::AllThatNode(const ElementTest& test) : test(test) {}
+
+bool AllThatNode::eval(const Game& game, Move move) const {
+    for (Element element = 0; element < game.E.size; element++) {
+        if (::eval(test, game, element) && !ManipulateMove::hasElement(move, element)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 AnyFromNode::AnyFromNode(const IntExpr& n, const ElementTest& test) : n(n), test(test) {}
 
 bool AnyFromNode::eval(const Game& game, Move move) const {
@@ -78,6 +98,27 @@ bool AnyFromNode::eval(const Game& game, Move move) const {
     }
 
     return count == target;
+}
+
+AllButNode::AllButNode(const IntExpr& n, const ElementTest& test) : n(n), test(test) {}
+
+bool AllButNode::eval(const Game& game, Move move) const {
+    const int omitCount = ::eval(n, game);
+    int total = 0;
+    int picked = 0;
+
+    for (Element element = 0; element < game.E.size; element++) {
+        if (!::eval(test, game, element)) {
+            continue;
+        }
+
+        total++;
+        if (ManipulateMove::hasElement(move, element)) {
+            picked++;
+        }
+    }
+
+    return picked == total - omitCount;
 }
 
 NotElementTestNode::NotElementTestNode(const ElementTest& inner) : inner(inner) {}
@@ -154,6 +195,18 @@ HasBeenPlayedNode::HasBeenPlayedNode(const MoveTest& test) : test(test) {}
 
 bool HasBeenPlayedNode::eval(const Game& game) const {
     for (Move move : game) {
+        if (::eval(test, game, move)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+IsLegalNode::IsLegalNode(const MoveTest& test) : test(test) {}
+
+bool IsLegalNode::eval(const Game& game) const {
+    for (Move move : game.legalMoves()) {
         if (::eval(test, game, move)) {
             return true;
         }
@@ -289,6 +342,18 @@ MoveTest all_elements(const ElementTest& test) {
     return MoveTest{ std::make_shared<AllElementsNode>(test) };
 }
 
+MoveTest all_that(const ElementTest& test) {
+    return MoveTest{ std::make_shared<AllThatNode>(test) };
+}
+
+MoveTest all_but(int n, const ElementTest& test) {
+    return all_but(literal_int(n), test);
+}
+
+MoveTest all_but(const IntExpr& n, const ElementTest& test) {
+    return MoveTest{ std::make_shared<AllButNode>(n, test) };
+}
+
 MoveTest any_from(int n, const ElementTest& test) {
     return any_from(literal_int(n), test);
 }
@@ -312,14 +377,11 @@ MoveTest operator|(const MoveTest& a, const MoveTest& b) {
 const MoveTest anything = MoveTest{ std::make_shared<AnythingNode>() };
 const MoveTest nothing = MoveTest{ std::make_shared<NothingNode>() };
 const MoveTest everything = MoveTest{ std::make_shared<EverythingNode>() };
+const Condition TRUE = Condition{ std::make_shared<TrueNode>() };
+const Condition FALSE = Condition{ std::make_shared<FalseNode>() };
 
-Condition true_condition() {
-    return Condition{ std::make_shared<TrueNode>() };
-}
-
-Condition false_condition() {
-    return Condition{ std::make_shared<FalseNode>() };
-}
+Condition true_condition() { return TRUE; }
+Condition false_condition() { return FALSE; }
 
 Condition there_is_an_element(const ElementTest& test) {
     return Condition{ std::make_shared<ExistsElementNode>(test) };
@@ -327,6 +389,10 @@ Condition there_is_an_element(const ElementTest& test) {
 
 Condition has_been_played(const MoveTest& test) {
     return Condition{ std::make_shared<HasBeenPlayedNode>(test) };
+}
+
+Condition is_legal(const MoveTest& test) {
+    return Condition{ std::make_shared<IsLegalNode>(test) };
 }
 
 Condition operator!(const Condition& inner) {
@@ -440,12 +506,12 @@ void StrategyBuilder::flush_pending_ifs_above(int id) {
 
 void StrategyBuilder::pick(const MoveTest& m) {
     flush_pending_ifs();
-    rules.push_back({ current, m, while_legal_depth > 0, std::nullopt });
+    rules.push_back({ current, m, std::nullopt });
 }
 
 void StrategyBuilder::pick(const MoveTest& m, const std::string& name) {
     flush_pending_ifs();
-    rules.push_back({ current, m, while_legal_depth > 0, name });
+    rules.push_back({ current, m, name });
 }
 
 Strategy StrategyBuilder::finish() const {
@@ -482,15 +548,6 @@ ElseScope::~ElseScope() {
         builder.current = builder.if_stack.back().parent;
         builder.if_stack.pop_back();
     }
-}
-
-WhileLegalScope::WhileLegalScope(StrategyBuilder& builder) : builder(builder) {
-    builder.flush_pending_ifs();
-    builder.while_legal_depth++;
-}
-
-WhileLegalScope::~WhileLegalScope() {
-    builder.while_legal_depth--;
 }
 
 bool eval(const ElementTest& test, const Game& game, Element element) {
@@ -534,28 +591,6 @@ void configureConsoleForUnicode() {
     setlocale(LC_ALL, ".UTF-8");
 }
 
-void clearScreen() {
-    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (console == INVALID_HANDLE_VALUE) {
-        std::system("cls");
-        return;
-    }
-
-    CONSOLE_SCREEN_BUFFER_INFO info;
-    if (!GetConsoleScreenBufferInfo(console, &info)) {
-        std::system("cls");
-        return;
-    }
-
-    const DWORD cellCount = static_cast<DWORD>(info.dwSize.X) * static_cast<DWORD>(info.dwSize.Y);
-    DWORD written = 0;
-    COORD home{ 0, 0 };
-
-    FillConsoleOutputCharacterA(console, ' ', cellCount, home, &written);
-    FillConsoleOutputAttribute(console, info.wAttributes, cellCount, home, &written);
-    SetConsoleCursorPosition(console, home);
-}
-
 void printHistory(const Game& game) {
     bool isPlayerOnesTurn = true;
     int moveNumber = 1;
@@ -572,7 +607,7 @@ void printHistory(const Game& game) {
             g_active_strategy != nullptr
             && isPlayerOnesTurn == g_active_strategy_is_player_one;
         const std::optional<std::string> ruleName =
-            strategyMadeMove ? findRuleNameForMove(*g_active_strategy, position, move) : std::nullopt;
+            strategyMadeMove ? findRuleNameForMoveImpl(*g_active_strategy, position, move) : std::nullopt;
 
         std::cout
             << "  "
@@ -596,7 +631,7 @@ void showIllegalMoveErrorAndPause(const Game& position, Move move, const std::op
     const bool isPlayerOnesTurn = (position.size() % 2 == 0);
 
     configureConsoleForUnicode();
-    std::cout << "Strategy tried to play an illegal move outside WHILE_LEGAL.\n\n";
+    std::cout << "Strategy tried to play an illegal move.\n\n";
     printHistory(position);
     std::cout << "\nIllegal move:\n";
     std::cout
@@ -609,7 +644,7 @@ void showIllegalMoveErrorAndPause(const Game& position, Move move, const std::op
             ruleName
         )
         << "\n\n";
-    g_strategy_runtime_error = "illegal strategy move outside WHILE_LEGAL";
+    g_strategy_runtime_error = "illegal strategy move";
 }
 
 void showNoMatchingMoveErrorAndPause(const Game& position) {
@@ -620,10 +655,6 @@ void showNoMatchingMoveErrorAndPause(const Game& position) {
 }
 
 void throwIfRuleAllowsIllegalMoves(const Rule& rule, const Game& position) {
-    if (rule.allow_illegal || hasStrategyRuntimeError()) {
-        return;
-    }
-
     for (Move candidate : position.allMoves()) {
         if (eval(rule.move, position, candidate) && !position.isMoveLegal(candidate)) {
             showIllegalMoveErrorAndPause(position, candidate, rule.name);
@@ -677,7 +708,7 @@ std::string makeStateKey(const Game& position, bool strategyPlayersTurn) {
     return out.str();
 }
 
-std::optional<std::string> findRuleNameForMove(const Strategy& strategy, const Game& position, Move move) {
+std::optional<std::string> findRuleNameForMoveImpl(const Strategy& strategy, const Game& position, Move move) {
     const std::vector<Move> candidates = position.legalMoves();
 
     for (const Rule& rule : strategy.rules) {
@@ -789,6 +820,10 @@ StrategyVerificationResult verifyStrategyImpl(
     return result;
 }
 } // namespace
+
+std::optional<std::string> ruleNameForMove(const Strategy& strategy, const Game& position, Move move) {
+    return findRuleNameForMoveImpl(strategy, position, move);
+}
 
 std::vector<Move> allowedMoves(const Strategy& strategy, const Game& position) {
     return allowedFromCandidates(strategy, position, position.allMoves());
