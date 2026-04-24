@@ -1,8 +1,6 @@
 #include "strategy.h"
 
-//#define strategyScriptFor1 "custom strategy 1.cpp"
-//#define strategyScriptFor2 "custom strategy 2.cpp"
-
+// Pick the strategy scripts you want to be able to assign player one and two
 #define strategyScriptFor1 "universalish strategy.cpp"
 #define strategyScriptFor2 "universalish strategy.cpp"
 
@@ -293,12 +291,8 @@ Move chooseStrategyMove(
 int main() {
     configureConsoleForUnicode();
 
-    // User gets to choose modes
     const PlayerMode playerOneMode = choosePlayerMode(true);
     const PlayerMode playerTwoMode = choosePlayerMode(false);
-
-    //const PlayerMode playerOneMode = PlayerMode::Manual;
-    //const PlayerMode playerTwoMode = PlayerMode::Strategy;
 
     const int n = promptUniversalSetSize();
 
@@ -328,6 +322,12 @@ int main() {
             move = chooseStrategyMove(strategy, game, playerOneMode, playerTwoMode, isPlayerOnesTurn);
 
             if (move == -1) {
+                if (hasStrategyRuntimeError()) {
+                    std::cout << "Press any key to exit.";
+                    _getch();
+                    return 0;
+                }
+
                 renderGame(game, playerOneMode, playerTwoMode);
                 std::cout << "Player " << (isPlayerOnesTurn ? 2 : 1) << " wins.\n";
                 std::cout << "Press any key to exit.";

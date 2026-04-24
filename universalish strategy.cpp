@@ -8,7 +8,7 @@ IF (safe_full_coverage.ever_after(singletonMove)) {
    PICK(singletonMove.such_that(safe_full_coverage), "Introduce a new singleton that causes a reduction");
 }
 IF (!full_coverage) {
-   PICK(all_elements(exposed), "Cover all exposed elements to create full coverage");
+   PICK(all_elements(exposed) & ~everything, "Cover all exposed elements to create full coverage");
 }
 IF(full_coverage.ever_after(anything))
 {
