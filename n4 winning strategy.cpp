@@ -111,10 +111,10 @@ IF (move1HasSize2) {
             IF (current_move == 4)
             {
                 PICK(
-                    (all_elements(only1) & all_elements(only2))
+                    (all_elements(only1 | only2))
                     .when(move3OnlysDifferent)
                     .otherwise(all_elements(~picked_on_move(3))),
-                    "Move for when move 3 not size 1"
+                    "Move 4 for when move 3 not size 1"
                 );
             }
 
