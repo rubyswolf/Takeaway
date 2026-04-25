@@ -1108,20 +1108,15 @@ StrategyVerificationResult verifyStrategyImpl(
             if (hasStrategyRuntimeError()) {
                 return {};
             }
-            if (child.wins) {
-                result.wins = true;
+            if (!child.wins) {
+                result.wins = false;
                 result.line.push_back(move);
                 result.line.insert(result.line.end(), child.line.begin(), child.line.end());
                 return result;
             }
-
-            if (result.line.empty()) {
-                result.line.push_back(move);
-                result.line.insert(result.line.end(), child.line.begin(), child.line.end());
-            }
         }
 
-        result.wins = false;
+        result.wins = true;
         return result;
     }
 
@@ -1336,8 +1331,8 @@ StrategyVerificationResult verifyStrategyParallelSlice(
                 return {};
             }
 
-            if (child.result.wins) {
-                result.wins = true;
+            if (!child.result.wins) {
+                result.wins = false;
                 result.line.push_back(moves[i]);
                 result.line.insert(result.line.end(), child.result.line.begin(), child.result.line.end());
                 stop_progress.store(true, std::memory_order_relaxed);
@@ -1345,14 +1340,9 @@ StrategyVerificationResult verifyStrategyParallelSlice(
                 g_active_strategy = nullptr;
                 return result;
             }
-
-            if (result.line.empty()) {
-                result.line.push_back(moves[i]);
-                result.line.insert(result.line.end(), child.result.line.begin(), child.result.line.end());
-            }
         }
 
-        result.wins = false;
+        result.wins = true;
         stop_progress.store(true, std::memory_order_relaxed);
         progress_thread.join();
         g_active_strategy = nullptr;

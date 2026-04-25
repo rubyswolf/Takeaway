@@ -1,9 +1,10 @@
-ElementTest covered = picked_in_any(only_from(~are_singleton));
+MoveTest cover = only_from(~are_singleton);
+ElementTest covered = picked_in_any(cover);
 ElementTest exposed = ~are_singleton & ~covered;
 Condition full_coverage = !there_is_an_element(exposed);
 MoveTest singletonMove = anything & any_from(1, pass);
 Condition safe_full_coverage = full_coverage && (!full_coverage).always_after(singletonMove);
-ElementIntExpr coverage = only_from(~are_singleton).times_picked;
+ElementIntExpr coverage = cover.times_picked;
 ElementTest leastCovered = ~are_singleton & (coverage == min(coverage, ~are_singleton));
 MoveTest coveringMove = all_elements(leastCovered);
 
