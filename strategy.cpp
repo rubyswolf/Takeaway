@@ -742,12 +742,17 @@ void StrategyBuilder::flush_pending_ifs_above(int id) {
 
 void StrategyBuilder::pick(const MoveTest& m) {
     flush_pending_ifs();
-    rules.push_back({ current, m, std::nullopt });
+    rules.push_back({ current, m, std::nullopt, std::nullopt });
 }
 
 void StrategyBuilder::pick(const MoveTest& m, const std::string& name) {
     flush_pending_ifs();
-    rules.push_back({ current, m, name });
+    rules.push_back({ current, m, name, std::nullopt });
+}
+
+void StrategyBuilder::throw_rule(const std::string& message) {
+    flush_pending_ifs();
+    rules.push_back({ current, nothing, std::nullopt, message });
 }
 
 Strategy StrategyBuilder::finish() const {
@@ -905,6 +910,13 @@ void showSuchThatNoMatchErrorAndPause(const Game& position, const std::optional<
     g_strategy_runtime_error = "such_that did not match any move that met the condition";
 }
 
+void showCustomThrowErrorAndPause(const Game& position, const std::string& message) {
+    configureConsoleForUnicode();
+    std::cout << message << "\n\n";
+    printHistory(position);
+    g_strategy_runtime_error = message;
+}
+
 bool suchThatMatchedUnderlyingMovesButNoCondition(const MoveTest& test, const Game& position, const std::vector<Move>& candidates) {
     const auto suchThat = std::dynamic_pointer_cast<SuchThatNode>(test.ptr);
     if (!suchThat) {
@@ -930,6 +942,10 @@ bool suchThatMatchedUnderlyingMovesButNoCondition(const MoveTest& test, const Ga
 }
 
 void throwIfRuleAllowsIllegalMoves(const Rule& rule, const Game& position) {
+    if (rule.throw_message.has_value()) {
+        return;
+    }
+
     for (Move candidate : position.allMoves()) {
         if (eval(rule.move, position, candidate) && !position.isMoveLegal(candidate)) {
             showIllegalMoveErrorAndPause(position, candidate, rule.name);
@@ -946,6 +962,11 @@ std::vector<Move> allowedFromCandidates(const Strategy& strategy, const Game& po
     for (const Rule& rule : strategy.rules) {
         if (!eval(rule.guard, position)) {
             continue;
+        }
+
+        if (rule.throw_message.has_value()) {
+            showCustomThrowErrorAndPause(position, *rule.throw_message);
+            return {};
         }
 
         throwIfRuleAllowsIllegalMoves(rule, position);
@@ -993,6 +1014,10 @@ std::optional<std::string> findRuleNameForMoveImpl(const Strategy& strategy, con
 
     for (const Rule& rule : strategy.rules) {
         if (!eval(rule.guard, position)) {
+            continue;
+        }
+
+        if (rule.throw_message.has_value()) {
             continue;
         }
 

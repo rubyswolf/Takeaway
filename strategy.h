@@ -422,6 +422,7 @@ struct Rule {
     Condition guard;
     MoveTest move;
     std::optional<std::string> name;
+    std::optional<std::string> throw_message;
 };
 
 struct Strategy {
@@ -528,6 +529,7 @@ struct StrategyBuilder {
     void flush_pending_ifs_above(int id);
     void pick(const MoveTest& m);
     void pick(const MoveTest& m, const std::string& name);
+    void throw_rule(const std::string& message);
     Strategy finish() const;
 };
 
@@ -554,6 +556,7 @@ struct ElseScope {
 #define IF(cond) if (IfScope _if_scope_{ builder, (cond) })
 #define ELSE if (ElseScope _else_scope_{ builder })
 #define PICK(...) builder.pick(__VA_ARGS__)
+#define THROW(message) builder.throw_rule((message));
 
 std::vector<Move> allowedMoves(const Strategy& strategy, const Game& position);
 std::vector<Move> allowedLegalMoves(const Strategy& strategy, const Game& position);
