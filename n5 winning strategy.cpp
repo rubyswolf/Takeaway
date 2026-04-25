@@ -22,4 +22,4 @@ IF (is_legal(pair_move))
 {
     PICK(pair_move, "Any pair");
 }
-PICK(anything, "Any legal move")
+PICK(anything, "Any legal move");
