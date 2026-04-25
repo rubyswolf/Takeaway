@@ -1288,8 +1288,8 @@ StrategyVerificationResult verifyStrategyParallelSlice(
             return result;
         }
 
-        std::vector<std::future<ParallelBranchResult>> futures;
         std::vector<std::atomic<unsigned long long>> branch_progress(moves.size());
+        std::vector<std::future<ParallelBranchResult>> futures;
         futures.reserve(moves.size());
 
         for (int i = 0; i < static_cast<int>(moves.size()); i++) {
@@ -1389,8 +1389,8 @@ StrategyVerificationResult verifyStrategyParallelSlice(
         return result;
     }
 
-    std::vector<std::future<ParallelBranchResult>> futures;
     std::vector<std::atomic<unsigned long long>> branch_progress(replies.size());
+    std::vector<std::future<ParallelBranchResult>> futures;
     futures.reserve(replies.size());
 
     for (int i = 0; i < static_cast<int>(replies.size()); i++) {

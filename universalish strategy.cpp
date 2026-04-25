@@ -7,6 +7,7 @@ Condition safe_full_coverage = full_coverage && (!full_coverage).always_after(si
 ElementIntExpr coverage = cover.times_picked;
 ElementTest leastCovered = ~are_singleton & (coverage == min(coverage, ~are_singleton));
 MoveTest coveringMove = all_elements(leastCovered);
+MoveTest non_singletons_compliment = all_elements(~are_singleton & ~picked_on_move(previous_move));
 
 IF (safe_full_coverage.ever_after(singletonMove)) {
    PICK(singletonMove.such_that(safe_full_coverage), "Introduce a new singleton that causes a reduction");
@@ -15,4 +16,8 @@ IF (safe_full_coverage.ever_after(coveringMove))
 {
    PICK(coveringMove.such_that(safe_full_coverage), "Cover all elements that are the least covered");
 }
-PICK(anything, "Pick any legal move as a last resort");
+IF (is_legal(non_singletons_compliment))
+{
+   PICK(non_singletons_compliment, "Non singleton's compliment");
+}
+PICK(anything, "Any legal move");

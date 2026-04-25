@@ -93,7 +93,7 @@ IF (move1HasSize2) {
         }
         IF (current_move == 6)
         {
-            PICK(all_elements(~both) & all_elements(~picked_on_move(5)), "3 1 Pair 5s Compliment");
+            PICK(all_elements(~both & ~picked_on_move(5)), "3 1 Pair 5s Compliment");
         }
     }
     ELSE {

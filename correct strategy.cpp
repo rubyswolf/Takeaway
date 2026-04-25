@@ -433,10 +433,10 @@ void writeCorrectionsFile(
 int main() {
     configureConsoleForUnicode();
 
-    constexpr int n = 5;
+    constexpr int n = 4;
     constexpr bool strategyPlayersTurn = false; // Strategy is player 2 from the starting position
-    constexpr int maxPatchDepth = 4;
-    constexpr int maxBranchOrder = 3;
+    constexpr int maxPatchDepth = 6;
+    constexpr int maxBranchOrder = 5;
 
     const UniversalSet E{ n };
     const Game start{ E };
