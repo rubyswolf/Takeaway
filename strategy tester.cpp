@@ -18,6 +18,16 @@ void configureConsoleForUnicode() {
     SetConsoleCP(CP_UTF8);
     setlocale(LC_ALL, ".UTF-8");
 }
+
+#ifndef VERIFY_ROOT_SLICE_COUNT
+#define VERIFY_ROOT_SLICE_COUNT 1
+#endif
+
+#ifndef VERIFY_ROOT_SLICE_INDEX
+#define VERIFY_ROOT_SLICE_INDEX 0
+#endif
+
+constexpr bool kSplitRootVerification = VERIFY_ROOT_SLICE_COUNT > 1;
 }
 
 Strategy buildN3WinningStrategy() {
@@ -103,6 +113,9 @@ struct TestRunResult {
     Strategy strategy;
     StrategyVerificationResult result;
     bool hadRuntimeError = false;
+    bool splitRootVerification = false;
+    std::size_t sliceIndex = 0;
+    std::size_t sliceCount = 1;
 };
 
 TestRunResult runTestCase(const std::string& label, int n, Strategy strategy) {
@@ -113,7 +126,33 @@ TestRunResult runTestCase(const std::string& label, int n, Strategy strategy) {
         n,
         std::move(strategy),
         result,
-        hasStrategyRuntimeError()
+        hasStrategyRuntimeError(),
+        false,
+        0,
+        1
+    };
+}
+
+TestRunResult runSplitTestCase(
+    const std::string& label,
+    int n,
+    Strategy strategy,
+    std::size_t sliceIndex,
+    std::size_t sliceCount) {
+
+    Game start{ UniversalSet(n) };
+    const StrategyVerificationResult result =
+        verifyStrategyParallelSlice(strategy, start, false, sliceIndex, sliceCount);
+
+    return {
+        label,
+        n,
+        std::move(strategy),
+        result,
+        hasStrategyRuntimeError(),
+        true,
+        sliceIndex,
+        sliceCount
     };
 }
 
@@ -127,10 +166,30 @@ void printTestRunResult(const TestRunResult& run) {
 
     Game start{ UniversalSet(run.n) };
     if (run.result.wins) {
-        std::cout << "  winning strategy\n";
+        if (run.splitRootVerification) {
+            std::cout
+                << "  no counterexample found in assigned root slice "
+                << (run.sliceIndex + 1)
+                << '/'
+                << run.sliceCount
+                << '\n';
+        }
+        else {
+            std::cout << "  winning strategy\n";
+        }
     }
     else {
-        std::cout << "  counterexample found\n";
+        if (run.splitRootVerification) {
+            std::cout
+                << "  counterexample found in assigned root slice "
+                << (run.sliceIndex + 1)
+                << '/'
+                << run.sliceCount
+                << '\n';
+        }
+        else {
+            std::cout << "  counterexample found\n";
+        }
         printCounterexampleLine(start, run.result.line, run.strategy, false);
     }
 
@@ -139,6 +198,22 @@ void printTestRunResult(const TestRunResult& run) {
 
 int main() {
     configureConsoleForUnicode();
+
+    if constexpr (kSplitRootVerification) {
+        const std::string label =
+            "universalish n=5 root slice "
+            + std::to_string(VERIFY_ROOT_SLICE_INDEX + 1)
+            + "/"
+            + std::to_string(VERIFY_ROOT_SLICE_COUNT);
+        printTestRunResult(
+            runSplitTestCase(
+                label,
+                5,
+                buildUniversalishStrategy(),
+                VERIFY_ROOT_SLICE_INDEX,
+                VERIFY_ROOT_SLICE_COUNT));
+        return 0;
+    }
 
     std::vector<std::future<TestRunResult>> futures;
     futures.push_back(std::async(std::launch::async, []() { return runTestCase("winning n=3", 3, buildN3WinningStrategy()); }));

@@ -35,6 +35,24 @@
 namespace {
 void showMoveWhereErrorAndPause(const Game& position);
 std::optional<std::string> findRuleNameForMoveImpl(const Strategy& strategy, const Game& position, Move move);
+
+std::pair<std::size_t, std::size_t> rootSliceBounds(
+    std::size_t total,
+    std::size_t slice_index,
+    std::size_t slice_count) {
+
+    if (slice_count == 0) {
+        slice_count = 1;
+    }
+
+    if (slice_index >= slice_count) {
+        slice_index = slice_count - 1;
+    }
+
+    const std::size_t begin = (total * slice_index) / slice_count;
+    const std::size_t end = (total * (slice_index + 1)) / slice_count;
+    return { begin, end };
+}
 }
 
 PickedOnMoveNode::PickedOnMoveNode(const IntExpr& move_number) : move_number(move_number) {}
@@ -1242,8 +1260,18 @@ StrategyVerificationResult verifyStrategy(const Strategy& strategy, const Game& 
 }
 
 StrategyVerificationResult verifyStrategyParallel(const Strategy& strategy, const Game& position, bool strategyPlayersTurn) {
+    return verifyStrategyParallelSlice(strategy, position, strategyPlayersTurn, 0, 1);
+}
+
+StrategyVerificationResult verifyStrategyParallelSlice(
+    const Strategy& strategy,
+    const Game& position,
+    bool strategyPlayersTurn,
+    std::size_t slice_index,
+    std::size_t slice_count) {
+
     const unsigned int hardware_threads = std::thread::hardware_concurrency();
-    if (hardware_threads < 2) {
+    if (hardware_threads < 2 && slice_count == 1) {
         return verifyStrategy(strategy, position, strategyPlayersTurn);
     }
 
@@ -1252,15 +1280,46 @@ StrategyVerificationResult verifyStrategyParallel(const Strategy& strategy, cons
     g_active_strategy_is_player_one = strategyPlayersTurn;
 
     if (strategyPlayersTurn) {
-        const std::vector<Move> moves = allowedLegalMoves(strategy, position);
+        const std::vector<Move> all_moves = allowedLegalMoves(strategy, position);
         if (hasStrategyRuntimeError()) {
             g_active_strategy = nullptr;
             return {};
         }
 
-        if (moves.size() < 2) {
+        if (all_moves.empty()) {
+            g_active_strategy = nullptr;
+            return {};
+        }
+
+        if (slice_count == 1 && all_moves.size() < 2) {
             g_active_strategy = nullptr;
             return verifyStrategy(strategy, position, strategyPlayersTurn);
+        }
+
+        const auto [begin, end] = rootSliceBounds(all_moves.size(), slice_index, slice_count);
+        if (begin >= end) {
+            g_active_strategy = nullptr;
+            return {};
+        }
+
+        std::vector<Move> moves(all_moves.begin() + static_cast<std::ptrdiff_t>(begin), all_moves.begin() + static_cast<std::ptrdiff_t>(end));
+
+        if (moves.size() == 1) {
+            Game next = position;
+            next.playMove(moves[0]);
+            ParallelBranchResult child = verifyStrategyBranch(strategy, next, false, strategyPlayersTurn, nullptr);
+            if (!child.runtime_error.empty()) {
+                g_strategy_runtime_error = child.runtime_error;
+                g_active_strategy = nullptr;
+                return {};
+            }
+
+            StrategyVerificationResult result;
+            result.wins = child.result.wins;
+            result.line.push_back(moves[0]);
+            result.line.insert(result.line.end(), child.result.line.begin(), child.result.line.end());
+            g_active_strategy = nullptr;
+            return result;
         }
 
         std::vector<std::future<ParallelBranchResult>> futures;
@@ -1329,10 +1388,44 @@ StrategyVerificationResult verifyStrategyParallel(const Strategy& strategy, cons
         return result;
     }
 
-    const std::vector<Move> replies = position.legalMoves();
-    if (replies.size() < 2) {
+    const std::vector<Move> all_replies = position.legalMoves();
+    if (all_replies.empty()) {
+        g_active_strategy = nullptr;
+        return StrategyVerificationResult{ true, {} };
+    }
+
+    if (slice_count == 1 && all_replies.size() < 2) {
         g_active_strategy = nullptr;
         return verifyStrategy(strategy, position, strategyPlayersTurn);
+    }
+
+    const auto [begin, end] = rootSliceBounds(all_replies.size(), slice_index, slice_count);
+    if (begin >= end) {
+        g_active_strategy = nullptr;
+        return StrategyVerificationResult{ true, {} };
+    }
+
+    std::vector<Move> replies(all_replies.begin() + static_cast<std::ptrdiff_t>(begin), all_replies.begin() + static_cast<std::ptrdiff_t>(end));
+
+    if (replies.size() == 1) {
+        Game next = position;
+        next.playMove(replies[0]);
+        ParallelBranchResult child = verifyStrategyBranch(strategy, next, true, strategyPlayersTurn, nullptr);
+        if (!child.runtime_error.empty()) {
+            g_strategy_runtime_error = child.runtime_error;
+            g_active_strategy = nullptr;
+            return {};
+        }
+
+        StrategyVerificationResult result;
+        result.wins = child.result.wins;
+        if (!child.result.wins) {
+            result.line.push_back(replies[0]);
+            result.line.insert(result.line.end(), child.result.line.begin(), child.result.line.end());
+        }
+
+        g_active_strategy = nullptr;
+        return result;
     }
 
     std::vector<std::future<ParallelBranchResult>> futures;
