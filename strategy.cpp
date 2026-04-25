@@ -1,8 +1,13 @@
 #include "strategy.h"
 
+#include <atomic>
+#include <chrono>
 #include <cstdlib>
+#include <future>
 #include <locale.h>
+#include <mutex>
 #include <sstream>
+#include <thread>
 #include <unordered_map>
 
 #ifndef NOMINMAX
@@ -812,9 +817,10 @@ int eval(const ElementIntExpr& expr, const Game& game, Element element) {
 }
 
 namespace {
-std::string g_strategy_runtime_error;
-const Strategy* g_active_strategy = nullptr;
-bool g_active_strategy_is_player_one = false;
+thread_local std::string g_strategy_runtime_error;
+thread_local const Strategy* g_active_strategy = nullptr;
+thread_local bool g_active_strategy_is_player_one = false;
+std::mutex g_strategy_output_mutex;
 }
 
 void clearStrategyRuntimeError() {
@@ -834,6 +840,11 @@ void configureConsoleForUnicode() {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
     setlocale(LC_ALL, ".UTF-8");
+}
+
+void logVerifierProgress(unsigned long long explored_positions) {
+    std::lock_guard<std::mutex> lock(g_strategy_output_mutex);
+    std::cout << "Verifier explored " << explored_positions << " positions...\n";
 }
 
 void printHistory(const Game& game) {
@@ -866,6 +877,7 @@ void printHistory(const Game& game) {
 }
 
 void showMoveWhereErrorAndPause(const Game& position) {
+    std::lock_guard<std::mutex> lock(g_strategy_output_mutex);
     configureConsoleForUnicode();
     std::cout << "move_where did not match any move in the game.\n\n";
     printHistory(position);
@@ -875,6 +887,7 @@ void showMoveWhereErrorAndPause(const Game& position) {
 void showIllegalMoveErrorAndPause(const Game& position, Move move, const std::optional<std::string>& ruleName) {
     const bool isPlayerOnesTurn = (position.size() % 2 == 0);
 
+    std::lock_guard<std::mutex> lock(g_strategy_output_mutex);
     configureConsoleForUnicode();
     std::cout << "Strategy tried to play an illegal move.\n\n";
     printHistory(position);
@@ -893,6 +906,7 @@ void showIllegalMoveErrorAndPause(const Game& position, Move move, const std::op
 }
 
 void showNoMatchingMoveErrorAndPause(const Game& position) {
+    std::lock_guard<std::mutex> lock(g_strategy_output_mutex);
     configureConsoleForUnicode();
     std::cout << "No move matched the strategy rules.\n\n";
     printHistory(position);
@@ -900,6 +914,7 @@ void showNoMatchingMoveErrorAndPause(const Game& position) {
 }
 
 void showSuchThatNoMatchErrorAndPause(const Game& position, const std::optional<std::string>& ruleName) {
+    std::lock_guard<std::mutex> lock(g_strategy_output_mutex);
     configureConsoleForUnicode();
     std::cout << "such_that did not match any move that met the condition";
     if (ruleName.has_value()) {
@@ -911,6 +926,7 @@ void showSuchThatNoMatchErrorAndPause(const Game& position, const std::optional<
 }
 
 void showCustomThrowErrorAndPause(const Game& position, const std::string& message) {
+    std::lock_guard<std::mutex> lock(g_strategy_output_mutex);
     configureConsoleForUnicode();
     std::cout << message << "\n\n";
     printHistory(position);
@@ -999,14 +1015,16 @@ std::vector<Move> allowedFromCandidates(const Strategy& strategy, const Game& po
 }
 
 std::string makeStateKey(const Game& position, bool strategyPlayersTurn) {
-    std::ostringstream out;
-    out << position.E.size << '|' << (strategyPlayersTurn ? 'S' : 'O');
-
+    std::string key;
+    key.reserve(8 + position.size() * 12);
+    key += std::to_string(position.E.size);
+    key.push_back('|');
+    key.push_back(strategyPlayersTurn ? 'S' : 'O');
     for (Move move : position) {
-        out << '|' << move;
+        key.push_back('|');
+        key += std::to_string(move);
     }
-
-    return out.str();
+    return key;
 }
 
 std::optional<std::string> findRuleNameForMoveImpl(const Strategy& strategy, const Game& position, Move move) {
@@ -1047,15 +1065,25 @@ StrategyVerificationResult verifyStrategyImpl(
     const Game& position,
     bool strategyPlayersTurn,
     std::unordered_map<std::string, StrategyVerificationResult>& memo,
-    unsigned long long& explored_positions) {
+    unsigned long long& explored_positions,
+    bool log_progress = true,
+    std::atomic<unsigned long long>* progress_slot = nullptr,
+    unsigned long long* pending_progress = nullptr) {
 
     if (hasStrategyRuntimeError()) {
         return {};
     }
 
     explored_positions++;
-    if (explored_positions % 50000 == 0) {
-        std::cout << "Verifier explored " << explored_positions << " positions...\n";
+    if (log_progress && explored_positions % 100000 == 0) {
+        logVerifierProgress(explored_positions);
+    }
+    if (progress_slot != nullptr && pending_progress != nullptr) {
+        (*pending_progress)++;
+        if (*pending_progress >= 4096) {
+            progress_slot->fetch_add(*pending_progress, std::memory_order_relaxed);
+            *pending_progress = 0;
+        }
     }
 
     const std::string key = makeStateKey(position, strategyPlayersTurn);
@@ -1079,7 +1107,8 @@ StrategyVerificationResult verifyStrategyImpl(
             Game next = position;
             next.playMove(move);
 
-            StrategyVerificationResult child = verifyStrategyImpl(strategy, next, false, memo, explored_positions);
+            StrategyVerificationResult child =
+                verifyStrategyImpl(strategy, next, false, memo, explored_positions, log_progress, progress_slot, pending_progress);
             if (hasStrategyRuntimeError()) {
                 return {};
             }
@@ -1113,7 +1142,8 @@ StrategyVerificationResult verifyStrategyImpl(
         Game next = position;
         next.playMove(reply);
 
-        StrategyVerificationResult child = verifyStrategyImpl(strategy, next, true, memo, explored_positions);
+        StrategyVerificationResult child =
+            verifyStrategyImpl(strategy, next, true, memo, explored_positions, log_progress, progress_slot, pending_progress);
         if (hasStrategyRuntimeError()) {
             return {};
         }
@@ -1129,6 +1159,38 @@ StrategyVerificationResult verifyStrategyImpl(
     result.wins = true;
     memo[key] = result;
     return result;
+}
+
+struct ParallelBranchResult {
+    StrategyVerificationResult result;
+    std::string runtime_error;
+    unsigned long long explored_positions = 0;
+};
+
+ParallelBranchResult verifyStrategyBranch(
+    const Strategy& strategy,
+    const Game& position,
+    bool strategyPlayersTurn,
+    bool strategyIsPlayerOne,
+    std::atomic<unsigned long long>* progress_slot) {
+
+    clearStrategyRuntimeError();
+    g_active_strategy = &strategy;
+    g_active_strategy_is_player_one = strategyIsPlayerOne;
+
+    std::unordered_map<std::string, StrategyVerificationResult> memo;
+    unsigned long long explored_positions = 0;
+    unsigned long long pending_progress = 0;
+    const StrategyVerificationResult result =
+        verifyStrategyImpl(strategy, position, strategyPlayersTurn, memo, explored_positions, false, progress_slot, &pending_progress);
+    if (progress_slot != nullptr && pending_progress != 0) {
+        progress_slot->fetch_add(pending_progress, std::memory_order_relaxed);
+    }
+    const std::string runtime_error = strategyRuntimeErrorMessage();
+
+    g_active_strategy = nullptr;
+    clearStrategyRuntimeError();
+    return { result, runtime_error, explored_positions };
 }
 } // namespace
 
@@ -1175,6 +1237,161 @@ StrategyVerificationResult verifyStrategy(const Strategy& strategy, const Game& 
     unsigned long long explored_positions = 0;
     const StrategyVerificationResult result =
         verifyStrategyImpl(strategy, position, strategyPlayersTurn, memo, explored_positions);
+    g_active_strategy = nullptr;
+    return result;
+}
+
+StrategyVerificationResult verifyStrategyParallel(const Strategy& strategy, const Game& position, bool strategyPlayersTurn) {
+    const unsigned int hardware_threads = std::thread::hardware_concurrency();
+    if (hardware_threads < 2) {
+        return verifyStrategy(strategy, position, strategyPlayersTurn);
+    }
+
+    clearStrategyRuntimeError();
+    g_active_strategy = &strategy;
+    g_active_strategy_is_player_one = strategyPlayersTurn;
+
+    if (strategyPlayersTurn) {
+        const std::vector<Move> moves = allowedLegalMoves(strategy, position);
+        if (hasStrategyRuntimeError()) {
+            g_active_strategy = nullptr;
+            return {};
+        }
+
+        if (moves.size() < 2) {
+            g_active_strategy = nullptr;
+            return verifyStrategy(strategy, position, strategyPlayersTurn);
+        }
+
+        std::vector<std::future<ParallelBranchResult>> futures;
+        std::vector<std::atomic<unsigned long long>> branch_progress(moves.size());
+        futures.reserve(moves.size());
+
+        for (int i = 0; i < static_cast<int>(moves.size()); i++) {
+            branch_progress[i].store(0, std::memory_order_relaxed);
+            const Move move = moves[i];
+            futures.push_back(std::async(std::launch::async, [&strategy, position, move, strategyPlayersTurn, &branch_progress, i]() {
+                Game next = position;
+                next.playMove(move);
+                return verifyStrategyBranch(strategy, next, false, strategyPlayersTurn, &branch_progress[i]);
+            }));
+        }
+
+        std::atomic<bool> stop_progress{ false };
+        std::thread progress_thread([&branch_progress, &stop_progress]() {
+            unsigned long long next_report = 100000;
+            while (!stop_progress.load(std::memory_order_relaxed)) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+
+                unsigned long long total_explored_positions = 0;
+                for (auto& counter : branch_progress) {
+                    total_explored_positions += counter.load(std::memory_order_relaxed);
+                }
+
+                while (total_explored_positions >= next_report) {
+                    logVerifierProgress(next_report);
+                    next_report += 100000;
+                }
+            }
+        });
+
+        StrategyVerificationResult result;
+        for (int i = 0; i < static_cast<int>(moves.size()); i++) {
+            ParallelBranchResult child = futures[i].get();
+            if (!child.runtime_error.empty()) {
+                stop_progress.store(true, std::memory_order_relaxed);
+                progress_thread.join();
+                g_strategy_runtime_error = child.runtime_error;
+                g_active_strategy = nullptr;
+                return {};
+            }
+
+            if (child.result.wins) {
+                result.wins = true;
+                result.line.push_back(moves[i]);
+                result.line.insert(result.line.end(), child.result.line.begin(), child.result.line.end());
+                stop_progress.store(true, std::memory_order_relaxed);
+                progress_thread.join();
+                g_active_strategy = nullptr;
+                return result;
+            }
+
+            if (result.line.empty()) {
+                result.line.push_back(moves[i]);
+                result.line.insert(result.line.end(), child.result.line.begin(), child.result.line.end());
+            }
+        }
+
+        result.wins = false;
+        stop_progress.store(true, std::memory_order_relaxed);
+        progress_thread.join();
+        g_active_strategy = nullptr;
+        return result;
+    }
+
+    const std::vector<Move> replies = position.legalMoves();
+    if (replies.size() < 2) {
+        g_active_strategy = nullptr;
+        return verifyStrategy(strategy, position, strategyPlayersTurn);
+    }
+
+    std::vector<std::future<ParallelBranchResult>> futures;
+    std::vector<std::atomic<unsigned long long>> branch_progress(replies.size());
+    futures.reserve(replies.size());
+
+    for (int i = 0; i < static_cast<int>(replies.size()); i++) {
+        branch_progress[i].store(0, std::memory_order_relaxed);
+        const Move reply = replies[i];
+        futures.push_back(std::async(std::launch::async, [&strategy, position, reply, strategyPlayersTurn, &branch_progress, i]() {
+            Game next = position;
+            next.playMove(reply);
+            return verifyStrategyBranch(strategy, next, true, strategyPlayersTurn, &branch_progress[i]);
+        }));
+    }
+
+    std::atomic<bool> stop_progress{ false };
+    std::thread progress_thread([&branch_progress, &stop_progress]() {
+        unsigned long long next_report = 100000;
+        while (!stop_progress.load(std::memory_order_relaxed)) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+
+            unsigned long long total_explored_positions = 0;
+            for (auto& counter : branch_progress) {
+                total_explored_positions += counter.load(std::memory_order_relaxed);
+            }
+
+            while (total_explored_positions >= next_report) {
+                logVerifierProgress(next_report);
+                next_report += 100000;
+            }
+        }
+    });
+
+    StrategyVerificationResult result;
+    for (int i = 0; i < static_cast<int>(replies.size()); i++) {
+        ParallelBranchResult child = futures[i].get();
+        if (!child.runtime_error.empty()) {
+            stop_progress.store(true, std::memory_order_relaxed);
+            progress_thread.join();
+            g_strategy_runtime_error = child.runtime_error;
+            g_active_strategy = nullptr;
+            return {};
+        }
+
+        if (!child.result.wins) {
+            result.wins = false;
+            result.line.push_back(replies[i]);
+            result.line.insert(result.line.end(), child.result.line.begin(), child.result.line.end());
+            stop_progress.store(true, std::memory_order_relaxed);
+            progress_thread.join();
+            g_active_strategy = nullptr;
+            return result;
+        }
+    }
+
+    result.wins = true;
+    stop_progress.store(true, std::memory_order_relaxed);
+    progress_thread.join();
     g_active_strategy = nullptr;
     return result;
 }

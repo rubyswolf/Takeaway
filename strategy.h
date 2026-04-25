@@ -575,3 +575,4 @@ struct StrategyVerificationResult {
 
 bool strategyWinsFrom(const Strategy& strategy, const Game& position, bool strategyPlayersTurn);
 StrategyVerificationResult verifyStrategy(const Strategy& strategy, const Game& position, bool strategyPlayersTurn);
+StrategyVerificationResult verifyStrategyParallel(const Strategy& strategy, const Game& position, bool strategyPlayersTurn);

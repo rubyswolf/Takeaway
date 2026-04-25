@@ -1,5 +1,6 @@
 #include "strategy.h"
 
+#include <future>
 #include <locale.h>
 #include <iostream>
 #include <string>
@@ -78,7 +79,7 @@ void testStrategy(const std::string& label, int n, const Strategy& strategy) {
     std::cout << label << ":\n";
 
     Game start{ UniversalSet(n) };
-    const StrategyVerificationResult result = verifyStrategy(strategy, start, false);
+    const StrategyVerificationResult result = verifyStrategyParallel(strategy, start, false);
 
     if (hasStrategyRuntimeError()) {
         std::cout << '\n';
@@ -96,11 +97,57 @@ void testStrategy(const std::string& label, int n, const Strategy& strategy) {
     std::cout << '\n';
 }
 
+struct TestRunResult {
+    std::string label;
+    int n = 0;
+    Strategy strategy;
+    StrategyVerificationResult result;
+    bool hadRuntimeError = false;
+};
+
+TestRunResult runTestCase(const std::string& label, int n, Strategy strategy) {
+    Game start{ UniversalSet(n) };
+    const StrategyVerificationResult result = verifyStrategyParallel(strategy, start, false);
+    return {
+        label,
+        n,
+        std::move(strategy),
+        result,
+        hasStrategyRuntimeError()
+    };
+}
+
+void printTestRunResult(const TestRunResult& run) {
+    std::cout << run.label << ":\n";
+
+    if (run.hadRuntimeError) {
+        std::cout << '\n';
+        return;
+    }
+
+    Game start{ UniversalSet(run.n) };
+    if (run.result.wins) {
+        std::cout << "  winning strategy\n";
+    }
+    else {
+        std::cout << "  counterexample found\n";
+        printCounterexampleLine(start, run.result.line, run.strategy, false);
+    }
+
+    std::cout << '\n';
+}
+
 int main() {
     configureConsoleForUnicode();
-    testStrategy("winning n=3", 3, buildN3WinningStrategy());
-    testStrategy("winning n=4", 4, buildN4WinningStrategy());
-    testStrategy("universalish n=3", 3, buildUniversalishStrategy());
-    testStrategy("universalish n=4", 4, buildUniversalishStrategy());
-    testStrategy("universalish n=5", 5, buildUniversalishStrategy());
+
+    std::vector<std::future<TestRunResult>> futures;
+    futures.push_back(std::async(std::launch::async, []() { return runTestCase("winning n=3", 3, buildN3WinningStrategy()); }));
+    futures.push_back(std::async(std::launch::async, []() { return runTestCase("winning n=4", 4, buildN4WinningStrategy()); }));
+    futures.push_back(std::async(std::launch::async, []() { return runTestCase("universalish n=3", 3, buildUniversalishStrategy()); }));
+    futures.push_back(std::async(std::launch::async, []() { return runTestCase("universalish n=4", 4, buildUniversalishStrategy()); }));
+    futures.push_back(std::async(std::launch::async, []() { return runTestCase("universalish n=5", 5, buildUniversalishStrategy()); }));
+
+    for (auto& future : futures) {
+        printTestRunResult(future.get());
+    }
 }

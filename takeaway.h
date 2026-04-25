@@ -17,6 +17,7 @@
 #include <optional> // This lets us represent values that may or may not be present
 #include <set> // This lets us define sets of items
 #include <string> // This allows us to work with strings of text
+#include <immintrin.h> // SIMD intrinsics for a manual fast path in hot bitmask checks
 
 // Let's define elements of E to be integers
 typedef int Element; // Define elements of E to be integers
@@ -243,6 +244,7 @@ public:
 	// Get ALL moves, including impossible moves such as the empty set and full set E
 	std::vector<Move> allMoves() const {
 		std::vector<Move> allMoves; // A list (vector) to store all possible moves that we will generate
+		allMoves.reserve(E.bitmask + 1);
 
 		for ( // Start a new loop for all possible moves
 			int candidateMove = 0; // The loop starts at 0 for the empty set
@@ -257,6 +259,7 @@ public:
 	// This is static so we can call it without referencing a specific game
 	std::vector<Move> allPossibleMoves() const {
 		std::vector<Move> allPossibleMoves; // A list (vector) to store all possible moves that we will generate
+		allPossibleMoves.reserve(E.bitmask > 0 ? E.bitmask - 1 : 0);
 
 		for ( // Start a new loop for all possible moves
 			int candidateMove = 1; // The loop starts at 1 (...0001) because we can't pick the empty set which is 0 (...0000)
@@ -329,7 +332,46 @@ public:
 		// A move is illegal if ANY of the previously chosen sets is a subset of the candidate move set
 		// So we just loop over all of the previous moves to see if this is the case for any of them:
 
-		for (Move previouslyChosenSet : *this) { // Here "*this" means "this game"
+#if defined(__AVX2__) || defined(_M_AVX2)
+		size_t i = 0;
+		const size_t moveCount = this->size();
+		const int* previousMoves = this->data();
+		const __m256i candidateVector = _mm256_set1_epi32(candidateMove);
+
+		for (; i + 8 <= moveCount; i += 8) {
+			const __m256i previousVector =
+				_mm256_loadu_si256(reinterpret_cast<const __m256i*>(previousMoves + i));
+			const __m256i subsetMask =
+				_mm256_cmpeq_epi32(_mm256_and_si256(previousVector, candidateVector), previousVector);
+
+			if (_mm256_movemask_epi8(subsetMask) != 0) {
+				return false;
+			}
+		}
+#elif defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+		size_t i = 0;
+		const size_t moveCount = this->size();
+		const int* previousMoves = this->data();
+		const __m128i candidateVector = _mm_set1_epi32(candidateMove);
+
+		for (; i + 4 <= moveCount; i += 4) {
+			const __m128i previousVector =
+				_mm_loadu_si128(reinterpret_cast<const __m128i*>(previousMoves + i));
+			const __m128i subsetMask =
+				_mm_cmpeq_epi32(_mm_and_si128(previousVector, candidateVector), previousVector);
+
+			if (_mm_movemask_epi8(subsetMask) != 0) {
+				return false;
+			}
+		}
+#else
+		size_t i = 0;
+		const size_t moveCount = this->size();
+		const int* previousMoves = this->data();
+#endif
+
+		for (; i < moveCount; i++) { // Here "*this" means "this game"
+			Move previouslyChosenSet = previousMoves[i];
 
 			// We need to check if this previously chosen set is contained inside the candidate move
 			// For a set to be a subset of another, every element in the smaller set must also appear in the larger one
@@ -354,6 +396,7 @@ public:
 	std::vector<Move> removeIllegalMoves(std::vector<Move> candidateMoves) const {
 
 		std::vector<Move> legalMoves; // A list (vector) to store only the legal moves that make it through the filtering
+		legalMoves.reserve(candidateMoves.size());
 
 		// We'll try every candidate move and only keep it if it's legal
 		for (Move candidateMove : candidateMoves) {
