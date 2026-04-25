@@ -226,7 +226,7 @@ int main() {
     std::vector<std::future<TestRunResult>> futures;
     futures.push_back(std::async(std::launch::async, []() { return runTestCase("winning n=3", 3, buildN3WinningStrategy()); }));
     futures.push_back(std::async(std::launch::async, []() { return runTestCase("winning n=4", 4, buildN4WinningStrategy()); }));
-    futures.push_back(std::async(std::launch::async, []() { return runTestCase("winning n=5", 4, buildN5WinningStrategy()); }));
+    futures.push_back(std::async(std::launch::async, []() { return runTestCase("winning n=5", 5, buildN5WinningStrategy()); }));
     futures.push_back(std::async(std::launch::async, []() { return runTestCase("universalish n=3", 3, buildUniversalishStrategy()); }));
     futures.push_back(std::async(std::launch::async, []() { return runTestCase("universalish n=4", 4, buildUniversalishStrategy()); }));
     //futures.push_back(std::async(std::launch::async, []() { return runTestCase("universalish n=5", 5, buildUniversalishStrategy()); }));
