@@ -405,7 +405,7 @@ public:
 	// But when we assume perfect play we also want to track cases where a win is always possible but not forced
 	// That is, you could lose the game if you played poorly but would always win if you played perfectly
 
-	MoveNode(Game position, int* totalNodes = nullptr, Move move = 0, int depth = 0, bool isPlayerOnesTurn = true, bool isWinningNode = false) : E(position.E), move(move), isWinningNode(isWinningNode) {
+	MoveNode(Game position, unsigned long long* totalNodes = nullptr, Move move = 0, int depth = 0, bool isPlayerOnesTurn = true, bool isWinningNode = false) : E(position.E), move(move), isWinningNode(isWinningNode) {
 
 		if (totalNodes != nullptr) // If we are tracking how many nodes we are generating
 		{
@@ -616,7 +616,7 @@ public:
 	}
 
 	// Perform perfect play pruning to make perfect player never play moves where they can't always win
-	void perfectPlayPrune(bool playerOneIsPerfect, bool playerTwoIsPerfect, int* totalPrunedNodes = nullptr, bool isPlayerOnesTurn = true, std::vector<Move> path = {}) {
+	void perfectPlayPrune(bool playerOneIsPerfect, bool playerTwoIsPerfect, unsigned long long* totalPrunedNodes = nullptr, bool isPlayerOnesTurn = true, std::vector<Move> path = {}) {
 
 		if (!playerOneIsPerfect && !playerTwoIsPerfect) { // If we're not making any player play perfectly
 			return; // Then we don't need to do anything
@@ -659,7 +659,7 @@ public:
 
 	// Another way to prune the tree is to assume that one or both players will always choose the first move available to them in the list of legal moves
 	// That way if a player has a winning strategy, it doesn't matter which winning move they play since they will always choose the first one listed
-	void alwaysChooseFirstMovePrune(bool playerOneAlwaysChoosesFirstMoveAvailable, bool playerTwoAlwaysChoosesFirstMoveAvailable, int* totalPrunedNodes = nullptr, bool isPlayerOnesTurn = true) {
+	void alwaysChooseFirstMovePrune(bool playerOneAlwaysChoosesFirstMoveAvailable, bool playerTwoAlwaysChoosesFirstMoveAvailable, unsigned long long* totalPrunedNodes = nullptr, bool isPlayerOnesTurn = true) {
 		if (!playerOneAlwaysChoosesFirstMoveAvailable && !playerTwoAlwaysChoosesFirstMoveAvailable) { // If we're not assuming either player always chooses the first move
 			return; // Then we don't need to prune any child nodes since we never made that	assumption in the first place
 		}

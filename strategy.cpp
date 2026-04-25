@@ -1046,10 +1046,16 @@ StrategyVerificationResult verifyStrategyImpl(
     const Strategy& strategy,
     const Game& position,
     bool strategyPlayersTurn,
-    std::unordered_map<std::string, StrategyVerificationResult>& memo) {
+    std::unordered_map<std::string, StrategyVerificationResult>& memo,
+    unsigned long long& explored_positions) {
 
     if (hasStrategyRuntimeError()) {
         return {};
+    }
+
+    explored_positions++;
+    if (explored_positions % 50000 == 0) {
+        std::cout << "Verifier explored " << explored_positions << " positions...\n";
     }
 
     const std::string key = makeStateKey(position, strategyPlayersTurn);
@@ -1073,7 +1079,7 @@ StrategyVerificationResult verifyStrategyImpl(
             Game next = position;
             next.playMove(move);
 
-            StrategyVerificationResult child = verifyStrategyImpl(strategy, next, false, memo);
+            StrategyVerificationResult child = verifyStrategyImpl(strategy, next, false, memo, explored_positions);
             if (hasStrategyRuntimeError()) {
                 return {};
             }
@@ -1107,7 +1113,7 @@ StrategyVerificationResult verifyStrategyImpl(
         Game next = position;
         next.playMove(reply);
 
-        StrategyVerificationResult child = verifyStrategyImpl(strategy, next, true, memo);
+        StrategyVerificationResult child = verifyStrategyImpl(strategy, next, true, memo, explored_positions);
         if (hasStrategyRuntimeError()) {
             return {};
         }
@@ -1166,7 +1172,9 @@ StrategyVerificationResult verifyStrategy(const Strategy& strategy, const Game& 
     g_active_strategy = &strategy;
     g_active_strategy_is_player_one = strategyPlayersTurn;
     std::unordered_map<std::string, StrategyVerificationResult> memo;
-    const StrategyVerificationResult result = verifyStrategyImpl(strategy, position, strategyPlayersTurn, memo);
+    unsigned long long explored_positions = 0;
+    const StrategyVerificationResult result =
+        verifyStrategyImpl(strategy, position, strategyPlayersTurn, memo, explored_positions);
     g_active_strategy = nullptr;
     return result;
 }
