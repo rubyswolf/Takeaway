@@ -5,6 +5,7 @@
 #define strategyScriptFor2 "universalish strategy.cpp"
 
 #include <conio.h>
+#include <cctype>
 #include <cstdlib>
 #include <locale.h>
 #include <iostream>
@@ -27,6 +28,7 @@ enum class PlayerMode {
 
 const Strategy* g_playerOneStrategy = nullptr;
 const Strategy* g_playerTwoStrategy = nullptr;
+std::vector<std::optional<std::string>> g_moveRuleNames;
 
 Strategy buildCustomStrategy1() {
     StrategyBuilder builder;
@@ -138,7 +140,10 @@ std::vector<std::string> historyLines(const Game& game, PlayerMode playerOneMode
     for (Move move : game) {
         std::optional<std::string> ruleName = std::nullopt;
 
-        if (isPlayerOnesTurn && playerOneMode == PlayerMode::Strategy && g_playerOneStrategy != nullptr) {
+        if (moveNumber - 1 < static_cast<int>(g_moveRuleNames.size()) && g_moveRuleNames[moveNumber - 1].has_value()) {
+            ruleName = g_moveRuleNames[moveNumber - 1];
+        }
+        else if (isPlayerOnesTurn && playerOneMode == PlayerMode::Strategy && g_playerOneStrategy != nullptr) {
             ruleName = ruleNameForMove(*g_playerOneStrategy, position, move);
         }
         else if (!isPlayerOnesTurn && playerTwoMode == PlayerMode::Strategy && g_playerTwoStrategy != nullptr) {
@@ -247,22 +252,47 @@ std::optional<Move> parseMoveInput(const std::string& input, UniversalSet E) {
     }
 }
 
-Move promptManualMove(const Game& game, PlayerMode playerOneMode, PlayerMode playerTwoMode) {
+std::string normalizeCommand(std::string input) {
+    for (char& c : input) {
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+    return input;
+}
+
+Move promptManualMove(const Game& game, PlayerMode& playerOneMode, PlayerMode& playerTwoMode) {
+    const bool isPlayerOnesTurn = (game.size() % 2 == 0);
+    std::string message;
+
     while (true) {
         renderGame(
             game,
             playerOneMode,
             playerTwoMode,
-            "Enter a move as a set or a bitmask number: ");
+            "Enter a move as a set or a bitmask number: ",
+            message);
 
         std::string input;
         std::getline(std::cin, input);
+        const std::string command = normalizeCommand(input);
+
+        if (command == "s" || command == "strategy") {
+            const Strategy* strategy = isPlayerOnesTurn ? g_playerOneStrategy : g_playerTwoStrategy;
+            const std::optional<Move> move = firstAllowedLegalMove(*strategy, game);
+            if (!move.has_value()) {
+                message = "The strategy has no legal move here.";
+                continue;
+            }
+            const std::optional<std::string> ruleName = ruleNameForMove(*strategy, game, *move);
+            g_moveRuleNames.push_back(ruleName);
+            return *move;
+        }
 
         const std::optional<Move> move = parseMoveInput(input, game.E);
         if (!move.has_value()) {
             renderGame(game, playerOneMode, playerTwoMode, "", "Invalid input.");
             std::cout << "Press any key to continue.";
             _getch();
+            message.clear();
             continue;
         }
 
@@ -270,9 +300,11 @@ Move promptManualMove(const Game& game, PlayerMode playerOneMode, PlayerMode pla
             renderGame(game, playerOneMode, playerTwoMode, "", "That move is illegal.");
             std::cout << "Press any key to continue.";
             _getch();
+            message.clear();
             continue;
         }
 
+        g_moveRuleNames.push_back(std::nullopt);
         return *move;
     }
 }
@@ -311,8 +343,8 @@ Move chooseStrategyMove(
 int main() {
     configureConsoleForUnicode();
 
-    const PlayerMode playerOneMode = choosePlayerMode(true);
-    const PlayerMode playerTwoMode = choosePlayerMode(false);
+    PlayerMode playerOneMode = choosePlayerMode(true);
+    PlayerMode playerTwoMode = choosePlayerMode(false);
 
     const int n = promptUniversalSetSize();
 
@@ -320,6 +352,7 @@ int main() {
     const Strategy playerTwoStrategy = buildCustomStrategy2();
     g_playerOneStrategy = &playerOneStrategy;
     g_playerTwoStrategy = &playerTwoStrategy;
+    g_moveRuleNames.clear();
 
     Game game{ UniversalSet(n) };
 
@@ -356,6 +389,8 @@ int main() {
                 _getch();
                 return 0;
             }
+
+            g_moveRuleNames.push_back(ruleNameForMove(strategy, game, move));
         }
 
         game.playMove(move);

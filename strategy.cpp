@@ -8,7 +8,6 @@
 #include <mutex>
 #include <sstream>
 #include <thread>
-#include <unordered_map>
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -1032,19 +1031,6 @@ std::vector<Move> allowedFromCandidates(const Strategy& strategy, const Game& po
     return {};
 }
 
-std::string makeStateKey(const Game& position, bool strategyPlayersTurn) {
-    std::string key;
-    key.reserve(8 + position.size() * 12);
-    key += std::to_string(position.E.size);
-    key.push_back('|');
-    key.push_back(strategyPlayersTurn ? 'S' : 'O');
-    for (Move move : position) {
-        key.push_back('|');
-        key += std::to_string(move);
-    }
-    return key;
-}
-
 std::optional<std::string> findRuleNameForMoveImpl(const Strategy& strategy, const Game& position, Move move) {
     const std::vector<Move> candidates = position.legalMoves();
 
@@ -1082,7 +1068,6 @@ StrategyVerificationResult verifyStrategyImpl(
     const Strategy& strategy,
     const Game& position,
     bool strategyPlayersTurn,
-    std::unordered_map<std::string, StrategyVerificationResult>& memo,
     unsigned long long& explored_positions,
     bool log_progress = true,
     std::atomic<unsigned long long>* progress_slot = nullptr,
@@ -1104,12 +1089,6 @@ StrategyVerificationResult verifyStrategyImpl(
         }
     }
 
-    const std::string key = makeStateKey(position, strategyPlayersTurn);
-    const auto found = memo.find(key);
-    if (found != memo.end()) {
-        return found->second;
-    }
-
     StrategyVerificationResult result;
 
     if (strategyPlayersTurn) {
@@ -1117,7 +1096,6 @@ StrategyVerificationResult verifyStrategyImpl(
 
         if (moves.empty()) {
             result.wins = false;
-            memo[key] = result;
             return result;
         }
 
@@ -1126,7 +1104,7 @@ StrategyVerificationResult verifyStrategyImpl(
             next.playMove(move);
 
             StrategyVerificationResult child =
-                verifyStrategyImpl(strategy, next, false, memo, explored_positions, log_progress, progress_slot, pending_progress);
+                verifyStrategyImpl(strategy, next, false, explored_positions, log_progress, progress_slot, pending_progress);
             if (hasStrategyRuntimeError()) {
                 return {};
             }
@@ -1134,7 +1112,6 @@ StrategyVerificationResult verifyStrategyImpl(
                 result.wins = true;
                 result.line.push_back(move);
                 result.line.insert(result.line.end(), child.line.begin(), child.line.end());
-                memo[key] = result;
                 return result;
             }
 
@@ -1145,14 +1122,12 @@ StrategyVerificationResult verifyStrategyImpl(
         }
 
         result.wins = false;
-        memo[key] = result;
         return result;
     }
 
     const std::vector<Move> replies = position.legalMoves();
     if (replies.empty()) {
         result.wins = true;
-        memo[key] = result;
         return result;
     }
 
@@ -1161,7 +1136,7 @@ StrategyVerificationResult verifyStrategyImpl(
         next.playMove(reply);
 
         StrategyVerificationResult child =
-            verifyStrategyImpl(strategy, next, true, memo, explored_positions, log_progress, progress_slot, pending_progress);
+            verifyStrategyImpl(strategy, next, true, explored_positions, log_progress, progress_slot, pending_progress);
         if (hasStrategyRuntimeError()) {
             return {};
         }
@@ -1169,13 +1144,11 @@ StrategyVerificationResult verifyStrategyImpl(
             result.wins = false;
             result.line.push_back(reply);
             result.line.insert(result.line.end(), child.line.begin(), child.line.end());
-            memo[key] = result;
             return result;
         }
     }
 
     result.wins = true;
-    memo[key] = result;
     return result;
 }
 
@@ -1196,11 +1169,10 @@ ParallelBranchResult verifyStrategyBranch(
     g_active_strategy = &strategy;
     g_active_strategy_is_player_one = strategyIsPlayerOne;
 
-    std::unordered_map<std::string, StrategyVerificationResult> memo;
     unsigned long long explored_positions = 0;
     unsigned long long pending_progress = 0;
     const StrategyVerificationResult result =
-        verifyStrategyImpl(strategy, position, strategyPlayersTurn, memo, explored_positions, false, progress_slot, &pending_progress);
+        verifyStrategyImpl(strategy, position, strategyPlayersTurn, explored_positions, false, progress_slot, &pending_progress);
     if (progress_slot != nullptr && pending_progress != 0) {
         progress_slot->fetch_add(pending_progress, std::memory_order_relaxed);
     }
@@ -1251,10 +1223,9 @@ StrategyVerificationResult verifyStrategy(const Strategy& strategy, const Game& 
     clearStrategyRuntimeError();
     g_active_strategy = &strategy;
     g_active_strategy_is_player_one = strategyPlayersTurn;
-    std::unordered_map<std::string, StrategyVerificationResult> memo;
     unsigned long long explored_positions = 0;
     const StrategyVerificationResult result =
-        verifyStrategyImpl(strategy, position, strategyPlayersTurn, memo, explored_positions);
+        verifyStrategyImpl(strategy, position, strategyPlayersTurn, explored_positions);
     g_active_strategy = nullptr;
     return result;
 }

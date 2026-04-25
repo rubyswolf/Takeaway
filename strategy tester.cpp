@@ -46,6 +46,14 @@ Strategy buildN4WinningStrategy() {
     return builder.finish();
 }
 
+Strategy buildN5WinningStrategy() {
+    StrategyBuilder builder;
+
+#include "n5 winning strategy.cpp"
+
+    return builder.finish();
+}
+
 Strategy buildUniversalishStrategy() {
     StrategyBuilder builder;
 
@@ -218,9 +226,10 @@ int main() {
     std::vector<std::future<TestRunResult>> futures;
     futures.push_back(std::async(std::launch::async, []() { return runTestCase("winning n=3", 3, buildN3WinningStrategy()); }));
     futures.push_back(std::async(std::launch::async, []() { return runTestCase("winning n=4", 4, buildN4WinningStrategy()); }));
+    futures.push_back(std::async(std::launch::async, []() { return runTestCase("winning n=5", 4, buildN5WinningStrategy()); }));
     futures.push_back(std::async(std::launch::async, []() { return runTestCase("universalish n=3", 3, buildUniversalishStrategy()); }));
     futures.push_back(std::async(std::launch::async, []() { return runTestCase("universalish n=4", 4, buildUniversalishStrategy()); }));
-    futures.push_back(std::async(std::launch::async, []() { return runTestCase("universalish n=5", 5, buildUniversalishStrategy()); }));
+    //futures.push_back(std::async(std::launch::async, []() { return runTestCase("universalish n=5", 5, buildUniversalishStrategy()); }));
 
     for (auto& future : futures) {
         printTestRunResult(future.get());
