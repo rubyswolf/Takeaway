@@ -3,7 +3,8 @@ ElementTest covered = picked_in_any(cover);
 ElementTest exposed = ~are_singleton & ~covered;
 Condition full_coverage = !there_is_an_element(exposed);
 MoveTest singletonMove = anything & any_from(1, pass);
-Condition safe_full_coverage = full_coverage && (!full_coverage).always_after(singletonMove);
+Condition no_counter_reduction_possible = (!full_coverage).always_after(singletonMove);
+Condition safe_full_coverage = full_coverage && no_counter_reduction_possible;
 ElementIntExpr coverage = cover.times_picked;
 ElementTest leastCovered = ~are_singleton & (coverage == min(coverage, ~are_singleton));
 MoveTest coveringMove = all_elements(leastCovered);
@@ -19,5 +20,9 @@ IF (safe_full_coverage.ever_after(coveringMove))
 IF (is_legal(non_singletons_compliment))
 {
    PICK(non_singletons_compliment, "Non singleton's compliment");
+}
+IF (no_counter_reduction_possible.ever_after(anything))
+{
+   PICK(anything.such_that(no_counter_reduction_possible), "Prevent counter reduction");
 }
 PICK(anything, "Any legal move");

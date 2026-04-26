@@ -88,16 +88,28 @@ Strategy withCorrections(const Strategy& base, const std::vector<Correction>& co
     return corrected;
 }
 
-void printLine(const std::vector<Move>& line, UniversalSet E, std::ostream& out = std::cout) {
+void printLine(
+    const std::vector<Move>& line,
+    UniversalSet E,
+    const Strategy* strategy = nullptr,
+    bool strategyPlayersTurn = false,
+    std::ostream& out = std::cout) {
+
     Game position{ E };
     bool isPlayerOnesTurn = true;
 
     for (Move move : line) {
+        const std::optional<std::string> ruleName =
+            (strategy != nullptr && isPlayerOnesTurn == strategyPlayersTurn)
+            ? ruleNameForMove(*strategy, position, move)
+            : std::nullopt;
+
         out << "  " << ManipulateMove::moveLine(
             E,
             move,
             static_cast<int>(position.size()) + 1,
-            isPlayerOnesTurn
+            isPlayerOnesTurn,
+            ruleName
         ) << '\n';
         position.playMove(move);
         isPlayerOnesTurn = !isPlayerOnesTurn;
@@ -433,10 +445,10 @@ void writeCorrectionsFile(
 int main() {
     configureConsoleForUnicode();
 
-    constexpr int n = 4;
+    constexpr int n = 5;
     constexpr bool strategyPlayersTurn = false; // Strategy is player 2 from the starting position
     constexpr int maxPatchDepth = 6;
-    constexpr int maxBranchOrder = 5;
+    constexpr int maxBranchOrder = 1;
 
     const UniversalSet E{ n };
     const Game start{ E };
@@ -463,7 +475,7 @@ int main() {
         counterexampleIndex++;
         std::cout << "Counterexample " << counterexampleIndex
                   << " with " << corrections.size() << " corrections so far:\n";
-        printLine(result.line, E);
+        printLine(result.line, E, &correctedStrategy, state.strategyPlayersTurn);
         std::cout << '\n';
 
         const std::vector<StrategyTurnOnLine> targetTurns =
@@ -559,9 +571,7 @@ int main() {
             std::cout << "  This patch wins from the starting position.\n\n";
         }
         else {
-            std::cout << "  New first counterexample after this patch:\n";
-            printLine(bestPatch->result.line, E);
-            std::cout << '\n';
+            std::cout << "  This patch changes the first counterexample but does not win from the starting position.\n\n";
         }
 
         corrections.insert(
