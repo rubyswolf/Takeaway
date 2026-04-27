@@ -369,6 +369,13 @@ struct CountElementsNode : IntNode {
     int eval(const Game& game) const override;
 };
 
+struct CountMovesNode : IntNode {
+    MoveTest test;
+
+    explicit CountMovesNode(const MoveTest& test);
+    int eval(const Game& game) const override;
+};
+
 struct MoveWhereNode : IntNode {
     MoveTest test;
 
@@ -389,6 +396,14 @@ struct SubtractIntNode : IntNode {
     IntExpr rhs;
 
     SubtractIntNode(const IntExpr& lhs, const IntExpr& rhs);
+    int eval(const Game& game) const override;
+};
+
+struct ModuloIntNode : IntNode {
+    IntExpr lhs;
+    IntExpr rhs;
+
+    ModuloIntNode(const IntExpr& lhs, const IntExpr& rhs);
     int eval(const Game& game) const override;
 };
 
@@ -484,6 +499,7 @@ ElementTest operator!=(const ElementIntExpr& lhs, int rhs);
 ElementTest operator!=(int lhs, const ElementIntExpr& rhs);
 
 IntExpr number_of_elements(const ElementTest& test);
+IntExpr number_of_moves(const MoveTest& test);
 IntExpr move_where(const MoveTest& test);
 IntExpr min(const ElementIntExpr& expr);
 IntExpr min(const ElementIntExpr& expr, const ElementTest& domain);
@@ -495,6 +511,9 @@ IntExpr operator+(int lhs, const IntExpr& rhs);
 IntExpr operator-(const IntExpr& lhs, const IntExpr& rhs);
 IntExpr operator-(const IntExpr& lhs, int rhs);
 IntExpr operator-(int lhs, const IntExpr& rhs);
+IntExpr operator%(const IntExpr& lhs, const IntExpr& rhs);
+IntExpr operator%(const IntExpr& lhs, int rhs);
+IntExpr operator%(int lhs, const IntExpr& rhs);
 extern const IntExpr current_move;
 extern const IntExpr previous_move;
 

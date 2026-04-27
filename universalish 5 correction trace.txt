@@ -1,0 +1,1870 @@
+Counterexample 1 with 0 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: ■□□■■ (25 = {1, 4, 5}) "Non singleton's compliment"
+  P1 move 7: ○○○●○ (8 = {4}) "Any legal move"
+  P2 move 8: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 9: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+  P2 move 10: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 11: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 10: □□■□□ (4 = {3}) "Correction 1"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 2 with 1 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: ■□□■■ (25 = {1, 4, 5}) "Non singleton's compliment"
+  P1 move 7: ○○○●○ (8 = {4}) "Any legal move"
+  P2 move 8: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 9: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+  P2 move 10: □□■□□ (4 = {3}) "Correction 1"
+  P1 move 11: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 2"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 3 with 2 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: ■□□■■ (25 = {1, 4, 5}) "Non singleton's compliment"
+  P1 move 7: ○○○●○ (8 = {4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 2"
+  P1 move 9: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 3"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 4 with 3 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: ■□□■■ (25 = {1, 4, 5}) "Non singleton's compliment"
+  P1 move 7: ○○○●○ (8 = {4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 2"
+  P1 move 9: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 3"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 10: □□□□■ (16 = {5}) "Correction 4"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 5 with 4 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: ■□□■■ (25 = {1, 4, 5}) "Non singleton's compliment"
+  P1 move 7: ○○○●○ (8 = {4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 2"
+  P1 move 9: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 4"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□■□□ (4 = {3}) "Correction 5"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 6 with 5 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: ■□□■■ (25 = {1, 4, 5}) "Non singleton's compliment"
+  P1 move 7: ○○○●○ (8 = {4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 2"
+  P1 move 9: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 4"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□■□□ (4 = {3}) "Correction 5"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 4.
+  Added 1 correction.
+    P2 move 6: □■□■□ (10 = {2, 4}) "Correction 6"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 7 with 6 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: □■□■□ (10 = {2, 4}) "Correction 6"
+  P1 move 7: ○○●○○ (4 = {3}) "Any legal move"
+  P2 move 8: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 9: ●○○●● (25 = {1, 4, 5}) "Cover all elements that are the least covered"
+  P2 move 10: ■□□□□ (1 = {1}) "Prevent counter reduction"
+  P1 move 11: ○○○●● (24 = {4, 5}) "Cover all elements that are the least covered"
+  P2 move 12: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 13: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 7"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 8 with 7 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: □■□■□ (10 = {2, 4}) "Correction 6"
+  P1 move 7: ○○●○○ (4 = {3}) "Any legal move"
+  P2 move 8: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 9: ●○○●● (25 = {1, 4, 5}) "Cover all elements that are the least covered"
+  P2 move 10: ■□□□□ (1 = {1}) "Prevent counter reduction"
+  P1 move 11: ○○○●● (24 = {4, 5}) "Cover all elements that are the least covered"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 7"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 10: □□□□■ (16 = {5}) "Correction 8"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 9 with 8 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: □■□■□ (10 = {2, 4}) "Correction 6"
+  P1 move 7: ○○●○○ (4 = {3}) "Any legal move"
+  P2 move 8: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 9: ●○○●● (25 = {1, 4, 5}) "Cover all elements that are the least covered"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 8"
+  P1 move 11: ●○○●○ (9 = {1, 4}) "Cover all elements that are the least covered"
+  P2 move 12: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□■□ (8 = {4}) "Correction 9"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 10 with 9 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: □■□■□ (10 = {2, 4}) "Correction 6"
+  P1 move 7: ○○●○○ (4 = {3}) "Any legal move"
+  P2 move 8: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 9: ●○○●● (25 = {1, 4, 5}) "Cover all elements that are the least covered"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 8"
+  P1 move 11: ●○○●○ (9 = {1, 4}) "Cover all elements that are the least covered"
+  P2 move 12: □□□■□ (8 = {4}) "Correction 9"
+  P1 move 13: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 3.
+  Added 1 correction.
+    P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 10"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 11 with 10 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: □■□■□ (10 = {2, 4}) "Correction 6"
+  P1 move 7: ○○●○○ (4 = {3}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 10"
+  P1 move 9: ●○○●○ (9 = {1, 4}) "Any legal move"
+  P2 move 10: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 11: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 12: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 15: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 14: □□□□■ (16 = {5}) "Correction 11"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 12 with 11 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: □■□■□ (10 = {2, 4}) "Correction 6"
+  P1 move 7: ○○●○○ (4 = {3}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 10"
+  P1 move 9: ●○○●○ (9 = {1, 4}) "Any legal move"
+  P2 move 10: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 11: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 12: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□□■ (16 = {5}) "Correction 11"
+  P1 move 15: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 12"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 13 with 12 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: □■□■□ (10 = {2, 4}) "Correction 6"
+  P1 move 7: ○○●○○ (4 = {3}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 10"
+  P1 move 9: ●○○●○ (9 = {1, 4}) "Any legal move"
+  P2 move 10: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 11: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 12"
+  P1 move 13: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 15: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 14: □□□■□ (8 = {4}) "Correction 13"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 14 with 13 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: □■□■□ (10 = {2, 4}) "Correction 6"
+  P1 move 7: ○○●○○ (4 = {3}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 10"
+  P1 move 9: ●○○●○ (9 = {1, 4}) "Any legal move"
+  P2 move 10: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 11: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 12"
+  P1 move 13: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□■□ (8 = {4}) "Correction 13"
+  P1 move 15: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 3.
+  Added 1 correction.
+    P2 move 10: □□□■■ (24 = {4, 5}) "Correction 14"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 15 with 14 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: □■□■□ (10 = {2, 4}) "Correction 6"
+  P1 move 7: ○○●○○ (4 = {3}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 10"
+  P1 move 9: ●○○●○ (9 = {1, 4}) "Any legal move"
+  P2 move 10: □□□■■ (24 = {4, 5}) "Correction 14"
+  P1 move 11: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 12: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 15: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 14: □□□□■ (16 = {5}) "Correction 15"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 16 with 15 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: □■□■□ (10 = {2, 4}) "Correction 6"
+  P1 move 7: ○○●○○ (4 = {3}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 10"
+  P1 move 9: ●○○●○ (9 = {1, 4}) "Any legal move"
+  P2 move 10: □□□■■ (24 = {4, 5}) "Correction 14"
+  P1 move 11: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 12: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□□■ (16 = {5}) "Correction 15"
+  P1 move 15: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 16"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 17 with 16 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: □■□■□ (10 = {2, 4}) "Correction 6"
+  P1 move 7: ○○●○○ (4 = {3}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 10"
+  P1 move 9: ●○○●○ (9 = {1, 4}) "Any legal move"
+  P2 move 10: □□□■■ (24 = {4, 5}) "Correction 14"
+  P1 move 11: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 16"
+  P1 move 13: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 15: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 14: □□□■□ (8 = {4}) "Correction 17"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 18 with 17 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □■□■■ (26 = {2, 4, 5}) "Non singleton's compliment"
+  P1 move 5: ○●●○○ (6 = {2, 3}) "Any legal move"
+  P2 move 6: □■□■□ (10 = {2, 4}) "Correction 6"
+  P1 move 7: ○○●○○ (4 = {3}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Correction 10"
+  P1 move 9: ●○○●○ (9 = {1, 4}) "Any legal move"
+  P2 move 10: □□□■■ (24 = {4, 5}) "Correction 14"
+  P1 move 11: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 16"
+  P1 move 13: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□■□ (8 = {4}) "Correction 17"
+  P1 move 15: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 6.
+  Added 1 correction.
+    P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 19 with 18 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 13: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 19"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 20 with 19 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 19"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 10: □□□□■ (16 = {5}) "Correction 20"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 21 with 20 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 20"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□■□ (8 = {4}) "Correction 21"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 22 with 21 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 20"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Correction 21"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 3.
+  Added 1 correction.
+    P2 move 8: □□□■■ (24 = {4, 5}) "Correction 22"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 23 with 22 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: □□□■■ (24 = {4, 5}) "Correction 22"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 13: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 23"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 24 with 23 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: □□□■■ (24 = {4, 5}) "Correction 22"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 23"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 10: □□□□■ (16 = {5}) "Correction 24"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 25 with 24 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: □□□■■ (24 = {4, 5}) "Correction 22"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 24"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□■□ (8 = {4}) "Correction 25"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 26 with 25 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: □□□■■ (24 = {4, 5}) "Correction 22"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 24"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Correction 25"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 4.
+  Added 1 correction.
+    P2 move 6: □□□■■ (24 = {4, 5}) "Correction 26"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 27 with 26 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 26"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 13: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 27"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 28 with 27 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 26"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 27"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 10: □□□□■ (16 = {5}) "Correction 28"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 29 with 28 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 26"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 28"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□■□ (8 = {4}) "Correction 29"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 30 with 29 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 26"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 28"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Correction 29"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 3.
+  Added 1 correction.
+    P2 move 8: □■□□■ (18 = {2, 5}) "Correction 30"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 31 with 30 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 26"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: □■□□■ (18 = {2, 5}) "Correction 30"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 13: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 31"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 32 with 31 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 26"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: □■□□■ (18 = {2, 5}) "Correction 30"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 31"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 10: □□□□■ (16 = {5}) "Correction 32"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 33 with 32 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 26"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: □■□□■ (18 = {2, 5}) "Correction 30"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 32"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□■□ (8 = {4}) "Correction 33"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 34 with 33 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □□■■■ (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P1 move 3: ●○●○○ (5 = {1, 3})
+  P2 move 4: □□■□□ (4 = {3}) "Correction 18"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 26"
+  P1 move 7: ○●○●○ (10 = {2, 4}) "Any legal move"
+  P2 move 8: □■□□■ (18 = {2, 5}) "Correction 30"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 32"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Correction 33"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 6.
+  Added 1 correction.
+    P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 35 with 34 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□■□■ (20 = {3, 5}) "Non singleton's compliment"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 13: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 35"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 36 with 35 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□■□■ (20 = {3, 5}) "Non singleton's compliment"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 35"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 10: □□□□■ (16 = {5}) "Correction 36"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 37 with 36 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□■□■ (20 = {3, 5}) "Non singleton's compliment"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 36"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□■□□ (4 = {3}) "Any legal move"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□■□ (8 = {4}) "Correction 37"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 38 with 37 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□■□■ (20 = {3, 5}) "Non singleton's compliment"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 36"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Correction 37"
+  P1 move 13: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 3.
+  Added 1 correction.
+    P2 move 8: □□□■■ (24 = {4, 5}) "Correction 38"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 39 with 38 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□■□■ (20 = {3, 5}) "Non singleton's compliment"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: □□□■■ (24 = {4, 5}) "Correction 38"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 13: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 39"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 40 with 39 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□■□■ (20 = {3, 5}) "Non singleton's compliment"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: □□□■■ (24 = {4, 5}) "Correction 38"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 39"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 10: □□□□■ (16 = {5}) "Correction 40"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 41 with 40 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□■□■ (20 = {3, 5}) "Non singleton's compliment"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: □□□■■ (24 = {4, 5}) "Correction 38"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 40"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□■□□ (4 = {3}) "Any legal move"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□■□ (8 = {4}) "Correction 41"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 42 with 41 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□■□■ (20 = {3, 5}) "Non singleton's compliment"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: □□□■■ (24 = {4, 5}) "Correction 38"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 40"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Correction 41"
+  P1 move 13: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 4.
+  Added 1 correction.
+    P2 move 6: □□□■■ (24 = {4, 5}) "Correction 42"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 43 with 42 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 42"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○○●○● (20 = {3, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 13: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 43"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 44 with 43 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 42"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○○●○● (20 = {3, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 43"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 10: □□□□■ (16 = {5}) "Correction 44"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 45 with 44 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 42"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○○●○● (20 = {3, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 44"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□■□□ (4 = {3}) "Any legal move"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□■□ (8 = {4}) "Correction 45"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 46 with 45 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 42"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: ■□□□■ (17 = {1, 5}) "Non singleton's compliment"
+  P1 move 9: ○○●○● (20 = {3, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 44"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Correction 45"
+  P1 move 13: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 3.
+  Added 1 correction.
+    P2 move 8: □□■□■ (20 = {3, 5}) "Correction 46"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 47 with 46 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 42"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: □□■□■ (20 = {3, 5}) "Correction 46"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 13: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 47"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 48 with 47 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 42"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: □□■□■ (20 = {3, 5}) "Correction 46"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: ■□□□□ (1 = {1}) "Any legal move"
+  P1 move 11: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 47"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 10: □□□□■ (16 = {5}) "Correction 48"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 49 with 48 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 42"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: □□■□■ (20 = {3, 5}) "Correction 46"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 48"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□■□□ (4 = {3}) "Any legal move"
+  P1 move 13: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 12: □□□■□ (8 = {4}) "Correction 49"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 50 with 49 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 5: ●○○●○ (9 = {1, 4})
+  P2 move 6: □□□■■ (24 = {4, 5}) "Correction 42"
+  P1 move 7: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 8: □□■□■ (20 = {3, 5}) "Correction 46"
+  P1 move 9: ●○○○● (17 = {1, 5}) "Any legal move"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 48"
+  P1 move 11: ●○○○○ (1 = {1}) "Introduce a new singleton that causes a reduction"
+  P2 move 12: □□□■□ (8 = {4}) "Correction 49"
+  P1 move 13: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Chose depth 5.
+  Added 1 correction.
+    P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 51 with 50 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 7: ○○●●● (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P2 move 8: □□■□□ (4 = {3}) "Prevent counter reduction"
+  P1 move 9: ○○○●● (24 = {4, 5}) "Cover all elements that are the least covered"
+  P2 move 10: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 11: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 10: □□□□■ (16 = {5}) "Correction 51"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 52 with 51 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 7: ○○●●● (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P2 move 8: □□■□□ (4 = {3}) "Prevent counter reduction"
+  P1 move 9: ○○○●● (24 = {4, 5}) "Cover all elements that are the least covered"
+  P2 move 10: □□□□■ (16 = {5}) "Correction 51"
+  P1 move 11: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 8: □□■■□ (12 = {3, 4}) "Correction 52"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 53 with 52 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 7: ○○●●● (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P2 move 8: □□■■□ (12 = {3, 4}) "Correction 52"
+  P1 move 9: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+  P2 move 10: □□■□□ (4 = {3}) "Any legal move"
+  P1 move 11: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 10: □□□■□ (8 = {4}) "Correction 53"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 54 with 53 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■□□□ (2 = {2}) "Prevent counter reduction"
+  P1 move 7: ○○●●● (28 = {3, 4, 5}) "Cover all elements that are the least covered"
+  P2 move 8: □□■■□ (12 = {3, 4}) "Correction 52"
+  P1 move 9: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+  P2 move 10: □□□■□ (8 = {4}) "Correction 53"
+  P1 move 11: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Chose depth 3.
+  Added 1 correction.
+    P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 55 with 54 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□□■■ (24 = {4, 5}) "Non singleton's compliment"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 11: ○○●○● (20 = {3, 5}) "Any legal move"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 15: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 14: □□□□■ (16 = {5}) "Correction 55"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 56 with 55 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□□■■ (24 = {4, 5}) "Non singleton's compliment"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 11: ○○●○● (20 = {3, 5}) "Any legal move"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□□■ (16 = {5}) "Correction 55"
+  P1 move 15: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 56"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 57 with 56 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□□■■ (24 = {4, 5}) "Non singleton's compliment"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 11: ○○●○● (20 = {3, 5}) "Any legal move"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 56"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□■□□ (4 = {3}) "Any legal move"
+  P1 move 15: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 14: □□□■□ (8 = {4}) "Correction 57"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 58 with 57 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□□■■ (24 = {4, 5}) "Non singleton's compliment"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 11: ○○●○● (20 = {3, 5}) "Any legal move"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 56"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□■□ (8 = {4}) "Correction 57"
+  P1 move 15: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 3.
+  Added 1 correction.
+    P2 move 10: □□■□■ (20 = {3, 5}) "Correction 58"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 59 with 58 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□□■■ (24 = {4, 5}) "Non singleton's compliment"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □□■□■ (20 = {3, 5}) "Correction 58"
+  P1 move 11: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 15: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 14: □□□□■ (16 = {5}) "Correction 59"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 60 with 59 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□□■■ (24 = {4, 5}) "Non singleton's compliment"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □□■□■ (20 = {3, 5}) "Correction 58"
+  P1 move 11: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□□■ (16 = {5}) "Correction 59"
+  P1 move 15: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 60"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 61 with 60 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□□■■ (24 = {4, 5}) "Non singleton's compliment"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □□■□■ (20 = {3, 5}) "Correction 58"
+  P1 move 11: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 60"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□■□□ (4 = {3}) "Any legal move"
+  P1 move 15: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 14: □□□■□ (8 = {4}) "Correction 61"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 62 with 61 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□□■■ (24 = {4, 5}) "Non singleton's compliment"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □□■□■ (20 = {3, 5}) "Correction 58"
+  P1 move 11: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 60"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□■□ (8 = {4}) "Correction 61"
+  P1 move 15: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 4.
+  Added 1 correction.
+    P2 move 8: □□■□■ (20 = {3, 5}) "Correction 62"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 63 with 62 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□■□■ (20 = {3, 5}) "Correction 62"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 11: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 15: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 14: □□□□■ (16 = {5}) "Correction 63"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 64 with 63 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□■□■ (20 = {3, 5}) "Correction 62"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 11: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□□■ (16 = {5}) "Correction 63"
+  P1 move 15: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 64"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 65 with 64 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□■□■ (20 = {3, 5}) "Correction 62"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 11: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 64"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□■□□ (4 = {3}) "Any legal move"
+  P1 move 15: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 14: □□□■□ (8 = {4}) "Correction 65"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 66 with 65 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□■□■ (20 = {3, 5}) "Correction 62"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □■□□■ (18 = {2, 5}) "Non singleton's compliment"
+  P1 move 11: ○○○●● (24 = {4, 5}) "Any legal move"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 64"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□■□ (8 = {4}) "Correction 65"
+  P1 move 15: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 3.
+  Added 1 correction.
+    P2 move 10: □□□■■ (24 = {4, 5}) "Correction 66"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 67 with 66 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□■□■ (20 = {3, 5}) "Correction 62"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □□□■■ (24 = {4, 5}) "Correction 66"
+  P1 move 11: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□■□ (8 = {4}) "Any legal move"
+  P1 move 15: ○○○○● (16 = {5}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 14: □□□□■ (16 = {5}) "Correction 67"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 68 with 67 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□■□■ (20 = {3, 5}) "Correction 62"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □□□■■ (24 = {4, 5}) "Correction 66"
+  P1 move 11: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 12: □■□□□ (2 = {2}) "Any legal move"
+  P1 move 13: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□□■ (16 = {5}) "Correction 67"
+  P1 move 15: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 2.
+  Added 1 correction.
+    P2 move 12: □□□□■ (16 = {5}) "Correction 68"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 69 with 68 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□■□■ (20 = {3, 5}) "Correction 62"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □□□■■ (24 = {4, 5}) "Correction 66"
+  P1 move 11: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 68"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□■□□ (4 = {3}) "Any legal move"
+  P1 move 15: ○○○●○ (8 = {4}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+  Chose depth 1.
+  Added 1 correction.
+    P2 move 14: □□□■□ (8 = {4}) "Correction 69"
+  This patch changes the first counterexample but does not win from the starting position.
+
+Counterexample 70 with 69 corrections so far:
+  P1 move 1: ●●○○○ (3 = {1, 2}) "Prevent counter reduction"
+  P2 move 2: □■□■■ (26 = {2, 4, 5}) "Correction 34"
+  P1 move 3: ●○●○○ (5 = {1, 3}) "Non singleton's compliment"
+  P2 move 4: □■□■□ (10 = {2, 4}) "Correction 50"
+  P1 move 5: ●○○○○ (1 = {1})
+  P2 move 6: □■■□■ (22 = {2, 3, 5}) "Correction 54"
+  P1 move 7: ○●●○○ (6 = {2, 3})
+  P2 move 8: □□■□■ (20 = {3, 5}) "Correction 62"
+  P1 move 9: ○○●●○ (12 = {3, 4}) "Any legal move"
+  P2 move 10: □□□■■ (24 = {4, 5}) "Correction 66"
+  P1 move 11: ○●○○● (18 = {2, 5}) "Any legal move"
+  P2 move 12: □□□□■ (16 = {5}) "Correction 68"
+  P1 move 13: ○●○○○ (2 = {2}) "Introduce a new singleton that causes a reduction"
+  P2 move 14: □□□■□ (8 = {4}) "Correction 69"
+  P1 move 15: ○○●○○ (4 = {3}) "Introduce a new singleton that causes a reduction"
+
+  Trying patch depth 1...
+  Trying patch depth 2...
+  Trying patch depth 3...
+  Trying patch depth 4...
+  Trying patch depth 5...
+  Trying patch depth 6...
+  Trying patch depth 7...
+Failed to patch counterexample 70 by changing a single strategy move.

@@ -1,5 +1,6 @@
 #include "strategy.h"
 
+#include <conio.h>
 #include <fstream>
 #include <locale.h>
 #include <iostream>
@@ -100,7 +101,7 @@ void printLine(
 
     for (Move move : line) {
         const std::optional<std::string> ruleName =
-            (strategy != nullptr && isPlayerOnesTurn == strategyPlayersTurn)
+            (strategy != nullptr)
             ? ruleNameForMove(*strategy, position, move)
             : std::nullopt;
 
@@ -447,8 +448,6 @@ int main() {
 
     constexpr int n = 5;
     constexpr bool strategyPlayersTurn = false; // Strategy is player 2 from the starting position
-    constexpr int maxPatchDepth = 6;
-    constexpr int maxBranchOrder = 1;
 
     const UniversalSet E{ n };
     const Game start{ E };
@@ -463,6 +462,8 @@ int main() {
 
         if (hasStrategyRuntimeError()) {
             std::cout << "\nStopped because the strategy runtime failed.\n";
+            std::cout << "Press any key to exit.";
+            _getch();
             return 1;
         }
 
@@ -484,71 +485,39 @@ int main() {
         bool patched = false;
         std::optional<CandidatePatch> bestPatch;
 
-        for (int depth = 1; depth <= maxPatchDepth && !patched; depth++) {
-            if (depth > static_cast<int>(targetTurns.size())) {
-                continue;
-            }
+        for (int depth = 1; depth <= static_cast<int>(targetTurns.size()) && !patched; depth++) {
+            std::vector<Correction> extraCorrections;
 
-            for (int branchOrder = 1; branchOrder <= depth && branchOrder <= maxBranchOrder; branchOrder++) {
-                std::vector<Correction> extraCorrections;
+            std::cout << "  Trying patch depth " << depth << "...\n";
 
-                if (branchOrder == 1) {
-                    std::cout << "  Trying patch depth " << depth << "...\n";
+            const int turnIndexFromStart = static_cast<int>(targetTurns.size()) - depth;
+            const std::vector<StrategyTurnOnLine> chosenTurns{ targetTurns[turnIndexFromStart] };
+            searchChosenTurnCorrections(
+                state,
+                corrections,
+                result.line,
+                chosenTurns,
+                0,
+                extraCorrections,
+                depth,
+                1,
+                bestPatch
+            );
 
-                    const int turnIndexFromStart = static_cast<int>(targetTurns.size()) - depth;
-                    const std::vector<StrategyTurnOnLine> chosenTurns{ targetTurns[turnIndexFromStart] };
-                    searchChosenTurnCorrections(
-                        state,
-                        corrections,
-                        result.line,
-                        chosenTurns,
-                        0,
-                        extraCorrections,
-                        depth,
-                        branchOrder,
-                        bestPatch
-                    );
-                }
-                else {
-                    std::vector<StrategyTurnOnLine> chosenTurns;
-                    const int windowStart = static_cast<int>(targetTurns.size()) - depth;
-                    const std::vector<StrategyTurnOnLine> windowTurns(
-                        targetTurns.begin() + windowStart,
-                        targetTurns.end()
-                    );
-
-                    std::cout << "  Trying branching order " << branchOrder
-                              << " at depth " << depth << "...\n";
-                    chooseTurnCombination(
-                        state,
-                        corrections,
-                        result.line,
-                        windowTurns,
-                        0,
-                        branchOrder,
-                        chosenTurns,
-                        extraCorrections,
-                        depth,
-                        branchOrder,
-                        bestPatch
-                    );
-                }
-
-                if (bestPatch.has_value() && bestPatch->result.wins) {
-                    patched = true;
-                }
+            if (bestPatch.has_value() && bestPatch->result.wins) {
+                patched = true;
             }
         }
 
         if (!bestPatch.has_value()) {
             std::cout << "Failed to patch counterexample " << counterexampleIndex
-                      << " up to depth " << maxPatchDepth
-                      << " and branching order " << maxBranchOrder << ".\n";
+                      << " by changing a single strategy move.\n";
+            std::cout << "Press any key to exit.";
+            _getch();
             return 1;
         }
 
-        std::cout << "  Chose depth " << bestPatch->depth
-                  << " with branching order " << bestPatch->branchOrder << ".\n";
+        std::cout << "  Chose depth " << bestPatch->depth << ".\n";
         std::cout << "  Added " << bestPatch->corrections.size() << " correction";
         if (bestPatch->corrections.size() != 1) {
             std::cout << "s";
@@ -584,5 +553,7 @@ int main() {
     const std::string outputPath = "n" + std::to_string(n) + " universalish corrections.txt";
     writeCorrectionsFile(outputPath, E, corrections);
     std::cout << "Corrections written to " << outputPath << "\n";
+    std::cout << "Press any key to exit.";
+    _getch();
     return 0;
 }

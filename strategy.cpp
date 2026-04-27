@@ -464,6 +464,20 @@ int CountElementsNode::eval(const Game& game) const {
     return count;
 }
 
+CountMovesNode::CountMovesNode(const MoveTest& test) : test(test) {}
+
+int CountMovesNode::eval(const Game& game) const {
+    int count = 0;
+
+    for (Move move : game) {
+        if (::eval(test, game, move)) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
 MoveWhereNode::MoveWhereNode(const MoveTest& test) : test(test) {}
 
 int MoveWhereNode::eval(const Game& game) const {
@@ -491,6 +505,17 @@ SubtractIntNode::SubtractIntNode(const IntExpr& lhs, const IntExpr& rhs) : lhs(l
 
 int SubtractIntNode::eval(const Game& game) const {
     return ::eval(lhs, game) - ::eval(rhs, game);
+}
+
+ModuloIntNode::ModuloIntNode(const IntExpr& lhs, const IntExpr& rhs) : lhs(lhs), rhs(rhs) {}
+
+int ModuloIntNode::eval(const Game& game) const {
+    const int right = ::eval(rhs, game);
+    if (right == 0) {
+        return 0;
+    }
+
+    return ::eval(lhs, game) % right;
 }
 
 namespace {
@@ -677,6 +702,10 @@ IntExpr number_of_elements(const ElementTest& test) {
     return IntExpr{ std::make_shared<CountElementsNode>(test) };
 }
 
+IntExpr number_of_moves(const MoveTest& test) {
+    return IntExpr{ std::make_shared<CountMovesNode>(test) };
+}
+
 IntExpr move_where(const MoveTest& test) {
     return IntExpr{ std::make_shared<MoveWhereNode>(test) };
 }
@@ -719,6 +748,18 @@ IntExpr operator-(const IntExpr& lhs, int rhs) {
 
 IntExpr operator-(int lhs, const IntExpr& rhs) {
     return literal_int(lhs) - rhs;
+}
+
+IntExpr operator%(const IntExpr& lhs, const IntExpr& rhs) {
+    return IntExpr{ std::make_shared<ModuloIntNode>(lhs, rhs) };
+}
+
+IntExpr operator%(const IntExpr& lhs, int rhs) {
+    return lhs % literal_int(rhs);
+}
+
+IntExpr operator%(int lhs, const IntExpr& rhs) {
+    return literal_int(lhs) % rhs;
 }
 
 const IntExpr current_move = IntExpr{ std::make_shared<CurrentMoveNode>() };

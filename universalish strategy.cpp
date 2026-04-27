@@ -9,6 +9,9 @@ ElementIntExpr coverage = cover.times_picked;
 ElementTest leastCovered = ~are_singleton & (coverage == min(coverage, ~are_singleton));
 MoveTest coveringMove = all_elements(leastCovered);
 MoveTest non_singletons_compliment = all_elements(~are_singleton & ~picked_on_move(previous_move));
+MoveTest subgameMove = cover & ~all_elements(~are_singleton);
+Condition even_reduction = (number_of_moves(subgameMove) % 2) == 0;
+Condition odd_reduction = (number_of_moves(subgameMove) % 2) == 1;
 
 IF (safe_full_coverage.ever_after(singletonMove)) {
    PICK(singletonMove.such_that(safe_full_coverage), "Introduce a new singleton that causes a reduction");
