@@ -18,10 +18,19 @@
 #include <vector> // This allows us to create dynamically sized lists of items called vectors
 #include <optional> // This lets us represent values that may or may not be present
 #include <set> // This lets us define sets of items
-#include <map> // This lets us cache solved game positions by a canonical key
+#include <unordered_map> // This lets us cache solved game positions by a compact canonical key
+#include <unordered_set> // This lets us deduplicate child positions by compact canonical key
 #include <functional> // This lets callers provide optional move-ordering heuristics
 #include <future> // This lets expensive child subtrees be generated in parallel
 #include <mutex> // This protects the solved-position cache during parallel generation
+#include <shared_mutex> // This allows concurrent solved-position cache reads
+#include <queue> // This supports the fixed thread pool work queue
+#include <condition_variable> // This lets worker threads wait for queued tasks
+#include <thread> // This lets the fixed thread pool own worker threads
+#include <utility> // This supports moving queued tasks and child build inputs
+#include <memory> // This lets queued packaged tasks be safely owned until workers run them
+#include <chrono> // This lets long generation runs stop at an internal benchmark deadline
+#include <exception> // This lets generation report an internal timeout cleanly
 #include <string> // This allows us to work with strings of text
 #include <immintrin.h> // SIMD intrinsics for a manual fast path in hot bitmask checks
 
@@ -431,7 +440,8 @@ public:
 	}
 };
 
-typedef std::vector<Move> MoveNodePositionKey;
+typedef std::string MoveNodePositionKey;
+typedef std::vector<Move> MoveNodeRawMoveSet;
 
 class MoveNode;
 
@@ -450,15 +460,24 @@ struct MoveNodeBuildResult
 	MoveNodeSolvedPosition solvedPosition;
 };
 
+struct MoveNodeGenerationTimeout : public std::exception
+{
+	const char* what() const noexcept override
+	{
+		return "MoveNode generation reached the configured time limit";
+	}
+};
+
 struct MoveNodeCache
 {
-	std::map<MoveNodePositionKey, MoveNodeSolvedPosition> solvedPositions;
+	std::unordered_map<MoveNodePositionKey, MoveNodeSolvedPosition> solvedPositions;
 	unsigned long long skippedDuplicatePositions = 0;
-	std::mutex mutex;
+	std::shared_mutex solvedPositionsMutex;
+	std::mutex counterMutex;
 
 	std::optional<MoveNodeSolvedPosition> findSolvedPosition(const MoveNodePositionKey& key)
 	{
-		std::lock_guard<std::mutex> lock(mutex);
+		std::shared_lock<std::shared_mutex> lock(solvedPositionsMutex);
 		auto found = solvedPositions.find(key);
 		if (found == solvedPositions.end()) {
 			return std::nullopt;
@@ -469,19 +488,19 @@ struct MoveNodeCache
 
 	void saveSolvedPosition(const MoveNodePositionKey& key, const MoveNodeSolvedPosition& position)
 	{
-		std::lock_guard<std::mutex> lock(mutex);
+		std::unique_lock<std::shared_mutex> lock(solvedPositionsMutex);
 		solvedPositions[key] = position;
 	}
 
 	void noteSkippedDuplicatePosition()
 	{
-		std::lock_guard<std::mutex> lock(mutex);
+		std::lock_guard<std::mutex> lock(counterMutex);
 		skippedDuplicatePositions++;
 	}
 
 	unsigned long long incrementGeneratedNodes(unsigned long long* totalNodes)
 	{
-		std::lock_guard<std::mutex> lock(mutex);
+		std::lock_guard<std::mutex> lock(counterMutex);
 		unsigned long long beforeIncrement = *totalNodes;
 		(*totalNodes)++;
 		return beforeIncrement;
@@ -490,8 +509,96 @@ struct MoveNodeCache
 
 typedef std::function<std::optional<std::vector<Move>>(const Game&, const std::vector<Move>&, int)> LazyMovePriorityProvider;
 
+class FixedThreadPool
+{
+public:
+	explicit FixedThreadPool(unsigned int threadCount = std::thread::hardware_concurrency())
+	{
+		if (threadCount == 0) {
+			threadCount = 1;
+		}
+
+		for (unsigned int i = 0; i < threadCount; i++) {
+			workers.emplace_back([this]() {
+				workerThread = true;
+
+				while (true) {
+					std::function<void()> task;
+
+					{
+						std::unique_lock<std::mutex> lock(mutex);
+						condition.wait(lock, [this]() { return stop || !tasks.empty(); });
+
+						if (stop && tasks.empty()) {
+							return;
+						}
+
+						task = std::move(tasks.front());
+						tasks.pop();
+					}
+
+					task();
+				}
+			});
+		}
+	}
+
+	~FixedThreadPool()
+	{
+		{
+			std::lock_guard<std::mutex> lock(mutex);
+			stop = true;
+		}
+
+		condition.notify_all();
+
+		for (std::thread& worker : workers) {
+			if (worker.joinable()) {
+				worker.join();
+			}
+		}
+	}
+
+	template<typename Function>
+	auto enqueue(Function task) -> std::future<decltype(task())>
+	{
+		using Result = decltype(task());
+		auto packagedTask = std::make_shared<std::packaged_task<Result()>>(std::move(task));
+		std::future<Result> result = packagedTask->get_future();
+
+		{
+			std::lock_guard<std::mutex> lock(mutex);
+			tasks.push([packagedTask]() { (*packagedTask)(); });
+		}
+
+		condition.notify_one();
+		return result;
+	}
+
+	bool isWorkerThread() const
+	{
+		return workerThread;
+	}
+
+private:
+	std::vector<std::thread> workers;
+	std::queue<std::function<void()>> tasks;
+	std::mutex mutex;
+	std::condition_variable condition;
+	bool stop = false;
+	inline static thread_local bool workerThread = false;
+};
+
 namespace MoveNodeEquivalence
 {
+	inline void appendKeyMove(MoveNodePositionKey& key, Move move)
+	{
+		unsigned int encodedMove = static_cast<unsigned int>(move);
+
+		key.push_back(static_cast<char>((encodedMove >> 8) & 0xFF));
+		key.push_back(static_cast<char>(encodedMove & 0xFF));
+	}
+
 	inline Move relabelMove(Move move, const std::vector<int>& permutation)
 	{
 		Move relabelledMove = 0;
@@ -552,9 +659,9 @@ namespace MoveNodeEquivalence
 		return relabelledMove;
 	}
 
-	inline MoveNodePositionKey relabelledMoveSet(const Game& position, const std::vector<int>& permutation)
+	inline MoveNodeRawMoveSet relabelledMoveSet(const Game& position, const std::vector<int>& permutation)
 	{
-		MoveNodePositionKey moves;
+		MoveNodeRawMoveSet moves;
 		moves.reserve(position.size());
 
 		for (Move move : position) {
@@ -571,7 +678,7 @@ namespace MoveNodeEquivalence
 			return std::nullopt;
 		}
 
-		MoveNodePositionKey targetMoves = relabelledMoveSet(to, {});
+		MoveNodeRawMoveSet targetMoves = relabelledMoveSet(to, {});
 
 		std::vector<int> permutation;
 		permutation.reserve(from.E.size);
@@ -605,15 +712,21 @@ namespace MoveNodeEquivalence
 			MoveNodePositionKey candidateKey;
 
 			// Include the turn explicitly so callers can also solve non-root positions safely.
-			candidateKey.push_back(isPlayerOnesTurn ? -1 : -2);
-			candidateKey.reserve(position.size() + 1);
+			candidateKey.push_back(isPlayerOnesTurn ? '\1' : '\2');
+			candidateKey.reserve(position.size() * 2 + 1);
 
+			MoveNodeRawMoveSet relabelledMoves;
+			relabelledMoves.reserve(position.size());
 			for (Move move : position) {
-				candidateKey.push_back(relabelMove(move, permutation));
+				relabelledMoves.push_back(relabelMove(move, permutation));
 			}
 
 			// Move order is irrelevant to the raw solver position. Only the set of moves matters.
-			std::sort(candidateKey.begin() + 1, candidateKey.end());
+			std::sort(relabelledMoves.begin(), relabelledMoves.end());
+
+			for (Move move : relabelledMoves) {
+				appendKeyMove(candidateKey, move);
+			}
 
 			if (!hasBestKey || candidateKey < bestKey) {
 				bestKey = candidateKey;
@@ -651,6 +764,8 @@ public:
 	bool playerTwoIsLazy = false; // Whether player two only generates the first move found that can force a win
 	const LazyMovePriorityProvider* lazyMovePriorityProvider = nullptr; // Optional priority groups for lazy players
 	int parallelDepth = 0; // How many more levels of child subtrees may be generated in parallel
+	FixedThreadPool* parallelPool = nullptr; // Shared fixed pool for bounded parallel generation
+	const std::chrono::steady_clock::time_point* generationDeadline = nullptr; // Optional internal timeout for benchmark runs
 
 	// Note that CAN always win is different from ALWAYS wins
 	// 
@@ -659,7 +774,11 @@ public:
 	// But when we assume perfect play we also want to track cases where a win is always possible but not forced
 	// That is, you could lose the game if you played poorly but would always win if you played perfectly
 
-	MoveNode(Game position, unsigned long long* totalNodes = nullptr, Move move = 0, int depth = 0, bool isPlayerOnesTurn = true, bool isWinningNode = false, MoveNodeCache* cache = nullptr, bool playerOneIsLazy = false, bool playerTwoIsLazy = false, const LazyMovePriorityProvider* lazyMovePriorityProvider = nullptr, int parallelDepth = 0, bool logGenerationProgress = true) : E(position.E), gamePosition(position), move(move), isWinningNode(isWinningNode), isPlayerOnesTurnAtPosition(isPlayerOnesTurn), playerOneIsLazy(playerOneIsLazy), playerTwoIsLazy(playerTwoIsLazy), lazyMovePriorityProvider(lazyMovePriorityProvider), parallelDepth(parallelDepth) {
+	MoveNode(Game position, unsigned long long* totalNodes = nullptr, Move move = 0, int depth = 0, bool isPlayerOnesTurn = true, bool isWinningNode = false, MoveNodeCache* cache = nullptr, bool playerOneIsLazy = false, bool playerTwoIsLazy = false, const LazyMovePriorityProvider* lazyMovePriorityProvider = nullptr, int parallelDepth = 0, bool logGenerationProgress = true, FixedThreadPool* parallelPool = nullptr, const std::chrono::steady_clock::time_point* generationDeadline = nullptr) : E(position.E), gamePosition(position), move(move), isWinningNode(isWinningNode), isPlayerOnesTurnAtPosition(isPlayerOnesTurn), playerOneIsLazy(playerOneIsLazy), playerTwoIsLazy(playerTwoIsLazy), lazyMovePriorityProvider(lazyMovePriorityProvider), parallelDepth(parallelDepth), parallelPool(parallelPool), generationDeadline(generationDeadline) {
+
+		if (generationDeadline != nullptr && std::chrono::steady_clock::now() >= *generationDeadline) {
+			throw MoveNodeGenerationTimeout();
+		}
 
 		MoveNodeCache localCache;
 		if (cache == nullptr) {
@@ -731,7 +850,7 @@ public:
 		// A temporary vector to store the child nodes we create for each legal move so that we can check if any of them are winning nodes before we add them to our main list of children
 		std::vector<MoveNode*> collectedChildren;
 		std::vector<MoveNodeSolvedPosition> childResults;
-		std::set<MoveNodePositionKey> seenChildPositions;
+		std::unordered_set<MoveNodePositionKey> seenChildPositions;
 		bool currentPlayerIsLazy = (isPlayerOnesTurn && playerOneIsLazy) || (!isPlayerOnesTurn && playerTwoIsLazy);
 		bool stoppedBecauseLazyPlayerFoundWin = false;
 		int priorityIndex = 0;
@@ -768,7 +887,7 @@ public:
 				remainingLegalMoves.clear();
 			}
 
-			if (parallelDepth > 0 && legalMoves.size() > 1) {
+			if (parallelDepth > 0 && parallelPool != nullptr && !parallelPool->isWorkerThread() && legalMoves.size() > 1) {
 				std::vector<std::pair<Move, Game>> childPositions;
 
 				for (Move move : legalMoves) {
@@ -776,7 +895,7 @@ public:
 					newPosition.playMove(move);
 
 					if (newPosition.principalLegalMoves().empty()) {
-						children.push_back(new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, true, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider, childParallelDepth, logGenerationProgress));
+						children.push_back(new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, true, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider, childParallelDepth, logGenerationProgress, parallelPool, generationDeadline));
 
 						playerOneCanAlwaysWin = isPlayerOnesTurn;
 						playerTwoCanAlwaysWin = !isPlayerOnesTurn;
@@ -801,9 +920,8 @@ public:
 				childTasks.reserve(childPositions.size());
 
 				for (const auto& childPosition : childPositions) {
-					childTasks.push_back(std::async(
-						std::launch::async,
-						[childPosition, depth, isPlayerOnesTurn, cache, totalNodes, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider, childParallelDepth, logGenerationProgress]() {
+					childTasks.push_back(parallelPool->enqueue(
+						[childPosition, depth, isPlayerOnesTurn, cache, totalNodes, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider, childParallelDepth, logGenerationProgress, parallelPool, generationDeadline]() {
 							MoveNode* child = new MoveNode(
 								childPosition.second,
 								totalNodes,
@@ -816,7 +934,9 @@ public:
 								playerTwoIsLazy,
 								lazyMovePriorityProvider,
 								childParallelDepth,
-								logGenerationProgress);
+								logGenerationProgress,
+								parallelPool,
+								generationDeadline);
 
 							return MoveNodeBuildResult{ child, child->solvedPosition() };
 						}));
@@ -863,7 +983,7 @@ public:
 			if (newPosition.principalLegalMoves().empty()) { // If there are no legal moves from this new position
 				// Then playing that move causes us to win immediately
 				// Play it and save it as a winning node
-				children.push_back(new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, true, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider, childParallelDepth, logGenerationProgress));
+				children.push_back(new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, true, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider, childParallelDepth, logGenerationProgress, parallelPool, generationDeadline));
 
 				// By definition the current player can always win (by playing this move)
 				playerOneCanAlwaysWin = isPlayerOnesTurn;
@@ -883,7 +1003,7 @@ public:
 			if (seenChildPositions.find(childPositionKey) != seenChildPositions.end()) {
 				std::optional<MoveNodeSolvedPosition> cachedChildPosition = cache->findSolvedPosition(childPositionKey);
 				if (cachedChildPosition.has_value()) {
-					collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider, childParallelDepth, logGenerationProgress));
+					collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider, childParallelDepth, logGenerationProgress, parallelPool, generationDeadline));
 					childResults.push_back(*cachedChildPosition);
 
 					if (currentPlayerIsLazy && playerCanAlwaysWin(*cachedChildPosition, isPlayerOnesTurn)) {
@@ -901,7 +1021,7 @@ public:
 
 			std::optional<MoveNodeSolvedPosition> cachedChildPosition = cache->findSolvedPosition(childPositionKey);
 			if (cachedChildPosition.has_value()) {
-				collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider, childParallelDepth, logGenerationProgress));
+				collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider, childParallelDepth, logGenerationProgress, parallelPool, generationDeadline));
 				childResults.push_back(*cachedChildPosition);
 				cache->noteSkippedDuplicatePosition();
 
@@ -915,7 +1035,7 @@ public:
 			}
 
 			// Create a new child node for this new position and add it to our temporary list of collected children
-			MoveNode* child = new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider, childParallelDepth, logGenerationProgress);
+			MoveNode* child = new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider, childParallelDepth, logGenerationProgress, parallelPool, generationDeadline);
 			collectedChildren.push_back(child);
 			childResults.push_back(child->solvedPosition());
 

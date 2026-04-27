@@ -22,6 +22,8 @@ int main()
 	bool full = false; // Full output expands equivalent positions instead of hiding duplicate subtrees
 	Assumption assumption = assumeTwoWins; // Change to dontAssume to prove the winner before pruning
 	int treeGenerationParallelDepth = 2; // Splits child subtree generation for this many levels
+	int treeGenerationTimeLimitSeconds = 0; // Set to 0 to run until completion
+	FixedThreadPool treeGenerationPool; // Bounded worker pool for parallel subtree generation
 	Strategy heuristicStrategy = buildUniversalishHeuristicStrategy();
 	LazyMovePriorityProvider heuristicPriority =
 		[&heuristicStrategy](const Game& position, const std::vector<Move>& remainingMoves, int priorityIndex) -> std::optional<std::vector<Move>>
@@ -51,7 +53,14 @@ int main()
 	unsigned long long* totalNodes = new unsigned long long(0); // Prepare a counter for how many nodes we generate
 	bool playerOneIsLazy = assumption == assumeOneWins;
 	bool playerTwoIsLazy = assumption == assumeTwoWins;
-	MoveNode gameTree = MoveNode(Game(E), totalNodes, 0, 0, true, false, nullptr, playerOneIsLazy, playerTwoIsLazy, lazyPriorityProvider, treeGenerationParallelDepth); // Create a move node for the initial game position to generate the game tree
+	auto generationStart = std::chrono::steady_clock::now();
+	std::optional<std::chrono::steady_clock::time_point> generationDeadline;
+	if (treeGenerationTimeLimitSeconds > 0) {
+		generationDeadline = generationStart + std::chrono::seconds(treeGenerationTimeLimitSeconds);
+	}
+
+	try {
+	MoveNode gameTree = MoveNode(Game(E), totalNodes, 0, 0, true, false, nullptr, playerOneIsLazy, playerTwoIsLazy, lazyPriorityProvider, treeGenerationParallelDepth, true, &treeGenerationPool, generationDeadline.has_value() ? &*generationDeadline : nullptr); // Create a move node for the initial game position to generate the game tree
 	std::cout << "Game tree generated, generated a total of " << *totalNodes << " nodes" << std::endl;
 
 	// Declare which player can always win if they play perfectly
@@ -89,4 +98,12 @@ int main()
 	std::string treeFileName = "n" + std::to_string(E.size) + " tree.txt"; // The name of the text file to save the diagram of the game tree to
 	std::ofstream(treeFileName) << gameTree.generateTreeDiagram(full); // Generate and save a text based diagram of the final pruned game tree to visualize the winning strategy for the player that always wins
 	std::cout << "Tree diagram saved to " << treeFileName << std::endl;
+	}
+	catch (const MoveNodeGenerationTimeout&) {
+		auto generationEnd = std::chrono::steady_clock::now();
+		std::chrono::duration<double> elapsed = generationEnd - generationStart;
+		std::cout << "Generation timed out after " << elapsed.count() << " seconds." << std::endl;
+		std::cout << "Exact generated nodes before timeout: " << *totalNodes << std::endl;
+		return 2;
+	}
 }
