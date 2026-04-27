@@ -1,8 +1,8 @@
-﻿#include "takeaway.h" // Include the game logic and solver core
+#include "takeaway.h" // Include the game logic and solver core
 
 int main()
 {
-	UniversalSet E = UniversalSet(5); // Create the universal set
+	UniversalSet E = UniversalSet(4); // Create the universal set
 	bool full = false; // Full output expands equivalent positions instead of hiding duplicate subtrees
 
 	// Generate the game tree
@@ -44,3 +44,4 @@ int main()
 	std::ofstream(treeFileName) << gameTree.generateTreeDiagram(full); // Generate and save a text based diagram of the final pruned game tree to visualize the winning strategy for the player that always wins
 	std::cout << "Tree diagram saved to " << treeFileName << std::endl;
 }
+

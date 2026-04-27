@@ -16,6 +16,7 @@
 #include <vector> // This allows us to create dynamically sized lists of items called vectors
 #include <optional> // This lets us represent values that may or may not be present
 #include <set> // This lets us define sets of items
+#include <map> // This lets us cache solved game positions by a canonical key
 #include <string> // This allows us to work with strings of text
 #include <immintrin.h> // SIMD intrinsics for a manual fast path in hot bitmask checks
 
@@ -425,10 +426,166 @@ public:
 	}
 };
 
+typedef std::vector<Move> MoveNodePositionKey;
+
+class MoveNode;
+
+struct MoveNodeSolvedPosition
+{
+	bool isWinningNode;
+	bool playerOneAlwaysWins;
+	bool playerTwoAlwaysWins;
+	bool playerOneCanAlwaysWin;
+	bool playerTwoCanAlwaysWin;
+};
+
+struct MoveNodeCache
+{
+	std::map<MoveNodePositionKey, MoveNodeSolvedPosition> solvedPositions;
+	std::map<MoveNodePositionKey, MoveNode*> representativeNodes;
+	unsigned long long skippedDuplicatePositions = 0;
+};
+
+namespace MoveNodeEquivalence
+{
+	inline Move relabelMove(Move move, const std::vector<int>& permutation)
+	{
+		Move relabelledMove = 0;
+
+		for (int oldElement = 0; oldElement < permutation.size(); oldElement++) {
+			if (ManipulateMove::hasElement(move, oldElement)) {
+				relabelledMove |= 1 << permutation[oldElement];
+			}
+		}
+
+		return relabelledMove;
+	}
+
+	inline std::vector<int> composeRelabelings(const std::vector<int>& first, const std::vector<int>& second)
+	{
+		if (first.empty()) {
+			return second;
+		}
+
+		if (second.empty()) {
+			return first;
+		}
+
+		std::vector<int> composed;
+		composed.reserve(first.size());
+
+		for (int element = 0; element < first.size(); element++) {
+			composed.push_back(second[first[element]]);
+		}
+
+		return composed;
+	}
+
+	inline std::vector<int> invertRelabeling(const std::vector<int>& permutation)
+	{
+		std::vector<int> inverse(permutation.size());
+
+		for (int oldElement = 0; oldElement < permutation.size(); oldElement++) {
+			inverse[permutation[oldElement]] = oldElement;
+		}
+
+		return inverse;
+	}
+
+	inline Move relabelMove(Move move, const std::vector<int>& permutation, UniversalSet E)
+	{
+		if (permutation.empty()) {
+			return move;
+		}
+
+		Move relabelledMove = relabelMove(move, permutation);
+
+		if ((relabelledMove & ~E.bitmask) != 0) {
+			std::cout << "Invalid relabelled move " << relabelledMove << " for E size " << E.size << std::endl;
+			exit(1);
+		}
+
+		return relabelledMove;
+	}
+
+	inline MoveNodePositionKey relabelledMoveSet(const Game& position, const std::vector<int>& permutation)
+	{
+		MoveNodePositionKey moves;
+		moves.reserve(position.size());
+
+		for (Move move : position) {
+			moves.push_back(relabelMove(move, permutation));
+		}
+
+		std::sort(moves.begin(), moves.end());
+		return moves;
+	}
+
+	inline std::optional<std::vector<int>> relabelingBetweenEquivalentPositions(const Game& from, const Game& to)
+	{
+		if (from.E.size != to.E.size || from.size() != to.size()) {
+			return std::nullopt;
+		}
+
+		MoveNodePositionKey targetMoves = relabelledMoveSet(to, {});
+
+		std::vector<int> permutation;
+		permutation.reserve(from.E.size);
+
+		for (int element = 0; element < from.E.size; element++) {
+			permutation.push_back(element);
+		}
+
+		do {
+			if (relabelledMoveSet(from, permutation) == targetMoves) {
+				return permutation;
+			}
+		} while (std::next_permutation(permutation.begin(), permutation.end()));
+
+		return std::nullopt;
+	}
+
+	inline MoveNodePositionKey canonicalPositionKey(const Game& position, bool isPlayerOnesTurn)
+	{
+		std::vector<int> permutation;
+		permutation.reserve(position.E.size);
+
+		for (int element = 0; element < position.E.size; element++) {
+			permutation.push_back(element);
+		}
+
+		MoveNodePositionKey bestKey;
+		bool hasBestKey = false;
+
+		do {
+			MoveNodePositionKey candidateKey;
+
+			// Include the turn explicitly so callers can also solve non-root positions safely.
+			candidateKey.push_back(isPlayerOnesTurn ? -1 : -2);
+			candidateKey.reserve(position.size() + 1);
+
+			for (Move move : position) {
+				candidateKey.push_back(relabelMove(move, permutation));
+			}
+
+			// Move order is irrelevant to the raw solver position. Only the set of moves matters.
+			std::sort(candidateKey.begin() + 1, candidateKey.end());
+
+			if (!hasBestKey || candidateKey < bestKey) {
+				bestKey = candidateKey;
+				hasBestKey = true;
+			}
+		} while (std::next_permutation(permutation.begin(), permutation.end()));
+
+		return bestKey;
+	}
+}
+
 class MoveNode
 {
 public:
 	UniversalSet E; // The universal set
+	Game gamePosition; // The game position represented by this node, used to expand duplicate references for full output
 
 	MoveNode* parent = nullptr; // The previous game position that led to this one
 	Move move; // The move that was made to get to this position from the parent position
@@ -440,6 +597,14 @@ public:
 
 	bool playerOneCanAlwaysWin; // Whether player one could always win if they play perfectly
 	bool playerTwoCanAlwaysWin; // Whether player two could always win if they play perfectly
+	bool isDuplicateReference = false; // Whether this node only references a solved equivalent position instead of expanding children
+	MoveNode* duplicateTarget = nullptr; // The already-expanded equivalent node this duplicate references
+	std::vector<int> duplicateTargetRelabeling; // Relabels duplicateTarget moves into this duplicate's labels
+	bool isPlayerOnesTurnAtPosition; // Whose turn it is at this position
+	bool isPruned = false; // Whether this node was removed from the visible strategy tree by pruning
+	bool hasPerfectPlayPruneSettings = false; // Whether this node has seen perfect-play pruning settings
+	bool prunedPlayerOneIsPerfect = false; // Last perfect-play setting used for player one
+	bool prunedPlayerTwoIsPerfect = false; // Last perfect-play setting used for player two
 
 	// Note that CAN always win is different from ALWAYS wins
 	// 
@@ -448,7 +613,32 @@ public:
 	// But when we assume perfect play we also want to track cases where a win is always possible but not forced
 	// That is, you could lose the game if you played poorly but would always win if you played perfectly
 
-	MoveNode(Game position, unsigned long long* totalNodes = nullptr, Move move = 0, int depth = 0, bool isPlayerOnesTurn = true, bool isWinningNode = false) : E(position.E), move(move), isWinningNode(isWinningNode) {
+	MoveNode(Game position, unsigned long long* totalNodes = nullptr, Move move = 0, int depth = 0, bool isPlayerOnesTurn = true, bool isWinningNode = false, MoveNodeCache* cache = nullptr) : E(position.E), gamePosition(position), move(move), isWinningNode(isWinningNode), isPlayerOnesTurnAtPosition(isPlayerOnesTurn) {
+
+		MoveNodeCache localCache;
+		if (cache == nullptr) {
+			cache = &localCache;
+		}
+
+		MoveNodePositionKey positionKey = MoveNodeEquivalence::canonicalPositionKey(position, isPlayerOnesTurn);
+
+		auto cachedPosition = cache->solvedPositions.find(positionKey);
+		if (cachedPosition != cache->solvedPositions.end()) {
+			applySolvedPosition(cachedPosition->second);
+			isDuplicateReference = true;
+			auto representativeNode = cache->representativeNodes.find(positionKey);
+			if (representativeNode != cache->representativeNodes.end()) {
+				duplicateTarget = representativeNode->second;
+				std::optional<std::vector<int>> relabeling =
+					MoveNodeEquivalence::relabelingBetweenEquivalentPositions(duplicateTarget->gamePosition, gamePosition);
+
+				if (relabeling.has_value()) {
+					duplicateTargetRelabeling = *relabeling;
+				}
+			}
+			cache->skippedDuplicatePositions++;
+			return;
+		}
 
 		if (totalNodes != nullptr) // If we are tracking how many nodes we are generating
 		{
@@ -478,6 +668,8 @@ public:
 			//playerOneCanAlwaysWin = !isPlayerOnesTurn;
 			//playerTwoCanAlwaysWin = isPlayerOnesTurn;
 
+			cache->solvedPositions[positionKey] = solvedPosition();
+			cache->representativeNodes[positionKey] = this;
 			return; // So we can just return early and not calculate any children
 		}
 
@@ -503,6 +695,8 @@ public:
 
 		// A temporary vector to store the child nodes we create for each legal move so that we can check if any of them are winning nodes before we add them to our main list of children
 		std::vector<MoveNode*> collectedChildren;
+		std::vector<MoveNodeSolvedPosition> childResults;
+		std::set<MoveNodePositionKey> seenChildPositions;
 
 		for (Move move : legalMoves) { // For each legal move
 			Game newPosition = position; // Create a new game position based on the current position
@@ -511,7 +705,7 @@ public:
 			if (newPosition.principalLegalMoves().empty()) { // If there are no legal moves from this new position
 				// Then playing that move causes us to win immediately
 				// Play it and save it as a winning node
-				children.push_back(new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, true));
+				children.push_back(new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, true, cache));
 
 				// By definition the current player can always win (by playing this move)
 				playerOneCanAlwaysWin = isPlayerOnesTurn;
@@ -522,29 +716,56 @@ public:
 				playerOneAlwaysWins = isPlayerOnesTurn;
 				playerTwoAlwaysWins = !isPlayerOnesTurn;
 
+				cache->solvedPositions[positionKey] = solvedPosition();
+				cache->representativeNodes[positionKey] = this;
 				return; // We can return early since we know the current player will always win from this position by playing this winning move
 			}
 
+			MoveNodePositionKey childPositionKey = MoveNodeEquivalence::canonicalPositionKey(newPosition, !isPlayerOnesTurn);
+
+			if (seenChildPositions.find(childPositionKey) != seenChildPositions.end()) {
+				auto cachedChildPosition = cache->solvedPositions.find(childPositionKey);
+				if (cachedChildPosition != cache->solvedPositions.end()) {
+					collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache));
+					childResults.push_back(cachedChildPosition->second);
+				}
+
+				cache->skippedDuplicatePositions++;
+				continue;
+			}
+
+			seenChildPositions.insert(childPositionKey);
+
+			auto cachedChildPosition = cache->solvedPositions.find(childPositionKey);
+			if (cachedChildPosition != cache->solvedPositions.end()) {
+				collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache));
+				childResults.push_back(cachedChildPosition->second);
+				cache->skippedDuplicatePositions++;
+				continue;
+			}
+
 			// Create a new child node for this new position and add it to our temporary list of collected children
-			collectedChildren.push_back(new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn));
+			MoveNode* child = new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, false, cache);
+			collectedChildren.push_back(child);
+			childResults.push_back(child->solvedPosition());
 		}
 
 		// Now we have created child nodes for all of the legal moves from this position and we can add them to our main list of children
 		children = collectedChildren; // Set our main list of children to be the list of collected children we just created
 
-		for (MoveNode* child : children) {
+		for (const MoveNodeSolvedPosition& child : childResults) {
 
 			// Always wins
 
 			// If playing this move does not cause player one to always win
-			if (!child->playerOneAlwaysWins) {
+			if (!child.playerOneAlwaysWins) {
 				// Then this means player one does not always win from this position
 				// Because this move could be played
 				playerOneAlwaysWins = false;
 			}
 
 			// If playing this move does not cause player two to always win
-			if (!child->playerTwoAlwaysWins) {
+			if (!child.playerTwoAlwaysWins) {
 				// Then this means player two does not always win from this position
 				// Because this move could be played
 				playerTwoAlwaysWins = false;
@@ -553,7 +774,7 @@ public:
 			// Can always win
 
 			// If playing this move causes player one to always be able to win
-			if (child->playerOneCanAlwaysWin) {
+			if (child.playerOneCanAlwaysWin) {
 				if (isPlayerOnesTurn) { // And it's player one's turn
 					// Then player one can play this move to always win
 					playerOneCanAlwaysWinBySomeMove = true;
@@ -565,7 +786,7 @@ public:
 			}
 
 			// If playing this move causes player two to always be able to win
-			if (child->playerTwoCanAlwaysWin) {
+			if (child.playerTwoCanAlwaysWin) {
 				if (!isPlayerOnesTurn) { // And it's player two's turn
 					// Then player two can play this move to always win
 					playerTwoCanAlwaysWinBySomeMove = true;
@@ -600,6 +821,29 @@ public:
 		// DEBUGGING: Detect clashes and indeterminates
 		//validateNode(position);
 		// END DEBUGGING
+
+		cache->solvedPositions[positionKey] = solvedPosition();
+		cache->representativeNodes[positionKey] = this;
+	}
+
+	MoveNodeSolvedPosition solvedPosition() const
+	{
+		return {
+			isWinningNode,
+			playerOneAlwaysWins,
+			playerTwoAlwaysWins,
+			playerOneCanAlwaysWin,
+			playerTwoCanAlwaysWin
+		};
+	}
+
+	void applySolvedPosition(const MoveNodeSolvedPosition& solvedPosition)
+	{
+		isWinningNode = solvedPosition.isWinningNode;
+		playerOneAlwaysWins = solvedPosition.playerOneAlwaysWins;
+		playerTwoAlwaysWins = solvedPosition.playerTwoAlwaysWins;
+		playerOneCanAlwaysWin = solvedPosition.playerOneCanAlwaysWin;
+		playerTwoCanAlwaysWin = solvedPosition.playerTwoCanAlwaysWin;
 	}
 
 	// A debugging utility I made to detect whenever there's something wrong with a node and print some useful debugging info
@@ -661,6 +905,10 @@ public:
 	// Perform perfect play pruning to make perfect player never play moves where they can't always win
 	void perfectPlayPrune(bool playerOneIsPerfect, bool playerTwoIsPerfect, unsigned long long* totalPrunedNodes = nullptr, bool isPlayerOnesTurn = true, std::vector<Move> path = {}) {
 
+		hasPerfectPlayPruneSettings = true;
+		prunedPlayerOneIsPerfect = playerOneIsPerfect;
+		prunedPlayerTwoIsPerfect = playerTwoIsPerfect;
+
 		if (!playerOneIsPerfect && !playerTwoIsPerfect) { // If we're not making any player play perfectly
 			return; // Then we don't need to do anything
 		}
@@ -670,6 +918,10 @@ public:
 		}
 
 		for (MoveNode* child : children) { // For each child
+			if (child->isPruned) {
+				continue;
+			}
+
 			// Recursively assume perfect play for the child node with the opposite player's turn
 			std::vector<Move> newPath = path;
 			newPath.push_back(child->move);
@@ -683,19 +935,18 @@ public:
 			if (canAlwaysWin(isPlayerOnesTurn)) {
 
 				// Then we can prune all of the child nodes that don't lead to a garunteed win for the current player since we are assuming they will always play the winning move
-				children.erase(std::remove_if(children.begin(), children.end(), [isPlayerOnesTurn, totalPrunedNodes](MoveNode* child) { // Remove any child node that does not lead to a forced win for the current player
+				for (MoveNode* child : children) {
 
 					bool imperfectMove = !child->canAlwaysWin(isPlayerOnesTurn); // If the move does not garuntee winning then it is imperfect
 
-					if (imperfectMove) {
+					if (imperfectMove && !child->isPruned) {
 						if (totalPrunedNodes != nullptr) // If we are tracking how many nodes we prune
 						{
 							(*totalPrunedNodes)++; // Increment our pruned node count to keep track of how many nodes we have pruned in our game tree
 						}
-						delete child; // Free the memory used by this child node since we're pruning it from the tree
+						child->isPruned = true; // Keep the node alive so duplicate references remain valid.
 					}
-					return imperfectMove; // Check if this child node does not lead to a win for the current player
-					}), children.end());
+				}
 			}
 		}
 	}
@@ -710,19 +961,33 @@ public:
 		if ((isPlayerOnesTurn && playerOneAlwaysChoosesFirstMoveAvailable) || (!isPlayerOnesTurn && playerTwoAlwaysChoosesFirstMoveAvailable)) { // If we need to prune at this node
 			// Delete all other child nodes except for the first one since we're assuming the current player always chooses the first move
 
-			for (int i = 1; i < children.size(); i++) { // Start from index 1 to skip the first child node
-				if (totalPrunedNodes != nullptr) // If we are tracking how many nodes we prune
+			int firstVisibleChild = -1;
+
+			for (int i = 0; i < children.size(); i++) {
+				if (!children[i]->isPruned && !children[i]->isDuplicateReference) {
+					firstVisibleChild = i;
+					break;
+				}
+			}
+
+			for (int i = 0; i < children.size(); i++) { // Prune all visible children except the first one
+				if (i == firstVisibleChild || children[i]->isDuplicateReference) {
+					continue;
+				}
+
+				if (!children[i]->isPruned && totalPrunedNodes != nullptr) // If we are tracking how many nodes we prune
 				{
 					(*totalPrunedNodes)++; // Increment our global pruned node count to keep track of how many nodes we have pruned in our game tree
 				}
-				delete children[i]; // Free the memory used by this child node since we pruned it from the tree
+				children[i]->isPruned = true; // Keep the node alive so duplicate references remain valid.
 			}
-
-			// Keep only the first child
-			children.resize(children.empty() ? 0 : 1);
 		}
 
 		for (MoveNode* child : children) { // For each remaining child node
+			if (child->isPruned) {
+				continue;
+			}
+
 			child->alwaysChooseFirstMovePrune(playerOneAlwaysChoosesFirstMoveAvailable, playerTwoAlwaysChoosesFirstMoveAvailable, totalPrunedNodes, !isPlayerOnesTurn); // Recursively prune the child node with the opposite player's turn
 		}
 	}
@@ -750,23 +1015,51 @@ public:
 	}
 
 	// Generate a list of strings that represent every possible full game within this tree
-	std::vector<std::string> generateGameStringList(bool printWinNotice = true, std::vector<Move> path = {}) {
+	std::vector<std::string> generateGameStringList(bool full, bool printWinNotice = true, std::vector<Move> path = {}, std::vector<int> outputRelabeling = {}) {
 		std::vector<std::string> gameStringList; // Create a list of strings for each game string
 
-		if (isWinningNode) { // Print out the full game once we reach a winning node
+		if (isPruned) {
+			return {};
+		}
+
+		if (isWinningNode || playerOneAlwaysWins || playerTwoAlwaysWins) { // Match the tree output by stopping once the winner is forced.
 			std::string gameString = ""; // A string to build up the game string for this winning leaf node
-			for (Move pathMove : path) { // Print out the moves that led to this position to see how we got here
-				gameString += std::to_string(pathMove) + ((pathMove != path.back()) ? "," : ""); // Print the move and a comma to separate the moves except for the last move in the position
+			for (int i = 0; i < path.size(); i++) { // Print out the moves that led to this position to see how we got here
+				gameString += std::to_string(path[i]) + ((i + 1 < path.size()) ? "," : ""); // Print the move and a comma to separate the moves except for the last move in the position
 			}
 			gameString += (printWinNotice ? " (" + std::to_string(playerOneAlwaysWins ? 1 : 2) + " wins)" : ""); // Print out that this is a winning move for the current player and move to a new line
 			return { gameString }; // Return the game string
 		}
 
-		for (MoveNode* child : children) { // For each child node
-			std::vector<Move> newPath = path; // Create a new path vector to represent the path to this child node
-			newPath.push_back(child->move); // Add the move that leads to this child node to the path
+		if (!full && isDuplicateReference) {
+			return {}; // Compact output hides duplicate-equivalent positions instead of showing shallow cache nodes.
+		}
 
-			std::vector<std::string> subGameStringList = child->generateGameStringList(printWinNotice, newPath); // Recursively generate the list of game strings for the child node with the opposite player's turn
+		if (full && isDuplicateReference) {
+			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode);
+
+			if (hasPerfectPlayPruneSettings) {
+				expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);
+			}
+
+			return expandedNode.generateGameStringListFromChildren(full, printWinNotice, path, outputRelabeling);
+		}
+
+		return generateGameStringListFromChildren(full, printWinNotice, path, outputRelabeling);
+	}
+
+	std::vector<std::string> generateGameStringListFromChildren(bool full, bool printWinNotice, std::vector<Move> path, std::vector<int> outputRelabeling) {
+		std::vector<std::string> gameStringList; // Create a list of strings for each game string
+		
+		for (MoveNode* child : children) { // For each child node
+			if (child->isPruned || (!full && child->isDuplicateReference)) {
+				continue;
+			}
+
+			std::vector<Move> newPath = path; // Create a new path vector to represent the path to this child node
+			newPath.push_back(MoveNodeEquivalence::relabelMove(child->move, outputRelabeling, E)); // Add the move that leads to this child node to the path
+
+			std::vector<std::string> subGameStringList = child->generateGameStringList(full, printWinNotice, newPath, outputRelabeling); // Recursively generate the list of game strings for the child node with the opposite player's turn
 
 			gameStringList.insert(gameStringList.end(), subGameStringList.begin(), subGameStringList.end()); // Add the generated moves to the main list of moves
 
@@ -776,15 +1069,19 @@ public:
 	}
 
 	// Generate a single string to represent the full list of games within this tree
-	std::string generateGameList(bool printWinNotice = true) {
-		return joinStringsWithNewlines(generateGameStringList(printWinNotice));
+	std::string generateGameList(bool full, bool printWinNotice = true) {
+		return joinStringsWithNewlines(generateGameStringList(full, printWinNotice));
 	}
 
 	// Generate a text based diagram of the game tree
 	// Note that the turns are reversed because we skip printing the root node
-	std::vector<std::string> generateTreeDiagramLines(bool isPlayerOnesTurn = false, int indentation = -1, bool isOnlyResponse = false) {
+	std::vector<std::string> generateTreeDiagramLines(bool full, bool isPlayerOnesTurn = false, int indentation = -1, bool isOnlyResponse = false, std::vector<int> outputRelabeling = {}) {
 
-		std::string moveSymbols = ManipulateMove::toSymbols(E, move, isPlayerOnesTurn); // Represent the move in a readable format
+		if (isPruned) {
+			return {};
+		}
+
+		std::string moveSymbols = ManipulateMove::toSymbols(E, MoveNodeEquivalence::relabelMove(move, outputRelabeling, E), isPlayerOnesTurn); // Represent the move in a readable format
 
 		std::string indent = ""; // The string at the start of each line to create indentation for the diagram to show the structure of the tree
 		for (int i = 0; i < indentation; i++) { // For each level of indentation we want to add
@@ -796,6 +1093,10 @@ public:
 			return { indent + "# " + moveSymbols };
 		}
 
+		if (!full && isDuplicateReference) {
+			return {}; // Compact output hides duplicate-equivalent positions instead of showing shallow cache nodes.
+		}
+
 		std::vector<std::string> diagramLines; // Create the list of diagram lines
 
 		if (move != 0)
@@ -804,9 +1105,49 @@ public:
 			diagramLines = { indent + (isOnlyResponse ? "- " : "+ ") + moveSymbols };
 		}
 
+		if (full && isDuplicateReference) {
+			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode);
+
+			if (hasPerfectPlayPruneSettings) {
+				expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);
+			}
+
+			std::vector<std::string> subDiagramLines =
+				expandedNode.generateTreeDiagramChildLines(full, !isPlayerOnesTurn, indentation, outputRelabeling);
+
+			diagramLines.insert(diagramLines.end(), subDiagramLines.begin(), subDiagramLines.end());
+			return diagramLines;
+		}
+
+		std::vector<std::string> subDiagramLines =
+			generateTreeDiagramChildLines(full, !isPlayerOnesTurn, indentation, outputRelabeling);
+
+		if (!full && move != 0 && subDiagramLines.empty()) {
+			return {};
+		}
+
+		diagramLines.insert(diagramLines.end(), subDiagramLines.begin(), subDiagramLines.end());
+		return diagramLines; // Return the generated diagram for this node and all of its children
+	}
+
+	std::vector<std::string> generateTreeDiagramChildLines(bool full, bool childIsPlayerOnesTurn, int parentIndentation, std::vector<int> outputRelabeling) {
+		int visibleChildCount = 0;
+		for (MoveNode* child : children) {
+			if (!child->isPruned && (full || !child->isDuplicateReference)) {
+				visibleChildCount++;
+			}
+		}
+
+		std::vector<std::string> diagramLines; // Create the list of diagram lines
+
 		for (MoveNode* child : children) { // For each child node
 
-			std::vector<std::string> subDiagramLines = child->generateTreeDiagramLines(!isPlayerOnesTurn, indentation + 1, children.size() == 1); // Recursively generate the lines of the tree diagram for this child
+			if (child->isPruned || (!full && child->isDuplicateReference)) {
+				continue;
+			}
+
+			std::vector<std::string> subDiagramLines =
+				child->generateTreeDiagramLines(full, childIsPlayerOnesTurn, parentIndentation + 1, visibleChildCount == 1, outputRelabeling); // Recursively generate the lines of the tree diagram for this child
 
 			diagramLines.insert(diagramLines.end(), subDiagramLines.begin(), subDiagramLines.end()); // Add the generated moves to the main list of moves
 		}
@@ -815,7 +1156,7 @@ public:
 	}
 
 	// Generate a single string to represent the full list of games within this tree
-	std::string generateTreeDiagram() {
-		return joinStringsWithNewlines(generateTreeDiagramLines());
+	std::string generateTreeDiagram(bool full) {
+		return joinStringsWithNewlines(generateTreeDiagramLines(full));
 	}
 };
