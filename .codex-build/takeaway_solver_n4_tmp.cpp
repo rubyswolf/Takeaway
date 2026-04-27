@@ -32,11 +32,11 @@ int main()
 
 	//# Save the results
 
-	// Save a list of all games in the tree as a comma separated list of move bitmask numbers like "1,14,2,12,4,8", one per line
-	std::cout << "Generating list of winning games..." << std::endl;
-	std::string gameListFileName = "n" + std::to_string(E.size) + " winning games.txt"; // The name of the text file to save the list of games where the player that can always win does win
-	std::ofstream(gameListFileName) << gameTree.generateGameList(full, false); // Generate a and save a list of all the games where the player that can always win plays perfectly to always win
-	std::cout << "Game list saved to " << gameListFileName << std::endl;
+	// Save the strategy as set-response rules like "{1,14,2} -> 12".
+	std::cout << "Generating set-response rules..." << std::endl;
+	std::string setResponseFileName = "n" + std::to_string(E.size) + " set response.txt"; // The name of the text file to save the set-response strategy rules
+	std::ofstream(setResponseFileName) << gameTree.generateSetResponse(full); // Save rules where every move before the arrow is part of the matched position and the move after the arrow is the response
+	std::cout << "Set-response rules saved to " << setResponseFileName << std::endl;
 	
 	// Save a text based tree diagram of the game tree
 	std::cout << "Generating tree diagram of the final pruned game tree..." << std::endl;

@@ -1073,6 +1073,140 @@ public:
 		return joinStringsWithNewlines(generateGameStringList(full, printWinNotice));
 	}
 
+	std::string formatSetResponseRule(const std::vector<Move>& path)
+	{
+		if (path.empty()) {
+			return "{} -> 0";
+		}
+
+		std::string rule = "{";
+
+		for (int i = 0; i + 1 < path.size(); i++) {
+			rule += std::to_string(path[i]) + ((i + 2 < path.size()) ? "," : "");
+		}
+
+		rule += "} -> " + std::to_string(path.back());
+		return rule;
+	}
+
+	std::vector<std::string> generateSetResponseLines(
+		bool full,
+		bool responsePlayerIsPlayerOne,
+		bool isPlayerOnesTurn = true,
+		std::vector<Move> path = {},
+		std::vector<int> outputRelabeling = {}) {
+		if (isPruned) {
+			return {};
+		}
+
+		if (isWinningNode || playerOneAlwaysWins || playerTwoAlwaysWins) {
+			return {};
+		}
+
+		if (!full && isDuplicateReference) {
+			if (isPlayerOnesTurn == responsePlayerIsPlayerOne) {
+				MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode);
+
+				if (hasPerfectPlayPruneSettings) {
+					expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);
+				}
+
+				for (MoveNode* child : expandedNode.children) {
+					if (child->isPruned) {
+						continue;
+					}
+
+					std::vector<Move> newPath = path;
+					newPath.push_back(MoveNodeEquivalence::relabelMove(child->move, outputRelabeling, E));
+					return { formatSetResponseRule(newPath) };
+				}
+			}
+
+			return {};
+		}
+
+		if (full && isDuplicateReference) {
+			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode);
+
+			if (hasPerfectPlayPruneSettings) {
+				expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);
+			}
+
+			return expandedNode.generateSetResponseLinesFromChildren(
+				full,
+				responsePlayerIsPlayerOne,
+				isPlayerOnesTurn,
+				path,
+				outputRelabeling);
+		}
+
+		return generateSetResponseLinesFromChildren(
+			full,
+			responsePlayerIsPlayerOne,
+			isPlayerOnesTurn,
+			path,
+			outputRelabeling);
+	}
+
+	std::vector<std::string> generateSetResponseLinesFromChildren(
+		bool full,
+		bool responsePlayerIsPlayerOne,
+		bool isPlayerOnesTurn,
+		std::vector<Move> path,
+		std::vector<int> outputRelabeling) {
+		std::vector<std::string> setResponseLines;
+
+		if (isPlayerOnesTurn == responsePlayerIsPlayerOne) {
+			for (MoveNode* child : children) {
+				if (child->isPruned) {
+					continue;
+				}
+
+				std::vector<Move> newPath = path;
+				newPath.push_back(MoveNodeEquivalence::relabelMove(child->move, outputRelabeling, E));
+				setResponseLines.push_back(formatSetResponseRule(newPath));
+
+				std::vector<std::string> childSetResponseLines =
+					child->generateSetResponseLines(
+						full,
+						responsePlayerIsPlayerOne,
+						!isPlayerOnesTurn,
+						newPath,
+						outputRelabeling);
+
+				setResponseLines.insert(setResponseLines.end(), childSetResponseLines.begin(), childSetResponseLines.end());
+				return setResponseLines;
+			}
+
+			return {};
+		}
+
+		for (MoveNode* child : children) {
+			if (child->isPruned) {
+				continue;
+			}
+
+			std::vector<Move> newPath = path;
+			newPath.push_back(MoveNodeEquivalence::relabelMove(child->move, outputRelabeling, E));
+
+			std::vector<std::string> childSetResponseLines =
+				child->generateSetResponseLines(
+					full,
+					responsePlayerIsPlayerOne,
+					!isPlayerOnesTurn,
+					newPath,
+					outputRelabeling);
+
+			setResponseLines.insert(setResponseLines.end(), childSetResponseLines.begin(), childSetResponseLines.end());
+		}
+
+		return setResponseLines;
+	}
+
+	std::string generateSetResponse(bool full) {
+		return joinStringsWithNewlines(generateSetResponseLines(full, playerOneCanAlwaysWin));
+	}
+
 	// Generate a text based diagram of the game tree
 	// Note that the turns are reversed because we skip printing the root node
 	std::vector<std::string> generateTreeDiagramLines(bool full, bool isPlayerOnesTurn = false, int indentation = -1, bool isOnlyResponse = false, std::vector<int> outputRelabeling = {}) {
