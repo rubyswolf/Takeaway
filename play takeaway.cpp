@@ -13,6 +13,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <algorithm>
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -23,12 +25,27 @@
 namespace {
 enum class PlayerMode {
     Manual,
-    Strategy
+    Strategy,
+    SetResponse
 };
 
 const Strategy* g_playerOneStrategy = nullptr;
 const Strategy* g_playerTwoStrategy = nullptr;
 std::vector<std::optional<std::string>> g_moveRuleNames;
+
+struct SetResponseRule {
+    std::vector<Move> requiredMoves;
+    Move response = 0;
+    std::string text;
+};
+
+struct SetResponseTable {
+    int n = 0;
+    std::vector<SetResponseRule> rules;
+};
+
+std::optional<SetResponseTable> g_setResponseTable;
+std::optional<std::string> g_lastSetResponseRuleName;
 
 Strategy buildCustomStrategy1() {
     StrategyBuilder builder;
@@ -78,32 +95,41 @@ std::string modeLabel(PlayerMode mode, std::string strategyScript) {
     if (mode == PlayerMode::Manual) {
         return "Manual";
     }
+    if (mode == PlayerMode::SetResponse) {
+        return "Set response";
+    }
 
     return "Strategy (" + strategyScript + ")";
 }
 
 PlayerMode choosePlayerMode(bool isPlayerOne) {
     int selection = 0;
+    const int optionCount = isPlayerOne ? 2 : 3;
 
     while (true) {
         clearScreen();
         std::cout << "Select Player " << (isPlayerOne ? "1" : "2") << " mode\n\n";
         std::cout << (selection == 0 ? "> " : "  ") << "Manual\n";
         std::cout << (selection == 1 ? "> " : "  ") << "Strategy (" << (isPlayerOne ? strategyScriptFor1 : strategyScriptFor2) << ")\n";
+        if (!isPlayerOne) {
+            std::cout << (selection == 2 ? "> " : "  ") << "Set response\n";
+        }
         std::cout << "\nUse Up/Down arrows and Enter.\n";
 
         const int key = _getch();
         if (key == 224 || key == 0) {
             const int arrow = _getch();
             if (arrow == 72 || arrow == 75) {
-                selection = (selection + 1) % 2;
+                selection = (selection + optionCount - 1) % optionCount;
             }
             else if (arrow == 80 || arrow == 77) {
-                selection = (selection + 1) % 2;
+                selection = (selection + 1) % optionCount;
             }
         }
         else if (key == 13) {
-            return selection == 0 ? PlayerMode::Manual : PlayerMode::Strategy;
+            if (selection == 0) return PlayerMode::Manual;
+            if (selection == 1) return PlayerMode::Strategy;
+            return PlayerMode::SetResponse;
         }
     }
 }
@@ -252,6 +278,130 @@ std::optional<Move> parseMoveInput(const std::string& input, UniversalSet E) {
     }
 }
 
+std::string trim(const std::string& input) {
+    const std::size_t first = input.find_first_not_of(" \t\r\n");
+    if (first == std::string::npos) {
+        return "";
+    }
+
+    const std::size_t last = input.find_last_not_of(" \t\r\n");
+    return input.substr(first, last - first + 1);
+}
+
+std::optional<SetResponseRule> parseSetResponseRule(const std::string& line) {
+    const std::size_t arrow = line.find("->");
+    if (arrow == std::string::npos) {
+        return std::nullopt;
+    }
+
+    std::string left = trim(line.substr(0, arrow));
+    std::string right = trim(line.substr(arrow + 2));
+    if (left.size() < 2 || left.front() != '{' || left.back() != '}') {
+        return std::nullopt;
+    }
+
+    SetResponseRule rule;
+    rule.text = left + " -> " + right;
+
+    const std::string inner = trim(left.substr(1, left.size() - 2));
+    if (!inner.empty()) {
+        std::stringstream stream(inner);
+        std::string token;
+        while (std::getline(stream, token, ',')) {
+            try {
+                rule.requiredMoves.push_back(std::stoi(trim(token)));
+            }
+            catch (...) {
+                return std::nullopt;
+            }
+        }
+    }
+
+    try {
+        rule.response = std::stoi(right);
+    }
+    catch (...) {
+        return std::nullopt;
+    }
+
+    return rule;
+}
+
+bool loadSetResponseTable(int n, std::string& error) {
+    if (g_setResponseTable.has_value() && g_setResponseTable->n == n) {
+        return true;
+    }
+
+    const std::string fileName = "n" + std::to_string(n) + " set response.txt";
+    std::ifstream file(fileName);
+    if (!file) {
+        error = "Could not find set response file: " + fileName;
+        return false;
+    }
+
+    SetResponseTable table;
+    table.n = n;
+
+    std::string line;
+    int lineNumber = 0;
+    while (std::getline(file, line)) {
+        lineNumber++;
+        line = trim(line);
+        if (line.empty()) {
+            continue;
+        }
+
+        std::optional<SetResponseRule> rule = parseSetResponseRule(line);
+        if (!rule.has_value()) {
+            error = "Invalid set response rule on line " + std::to_string(lineNumber) + " of " + fileName;
+            return false;
+        }
+
+        table.rules.push_back(*rule);
+    }
+
+    g_setResponseTable = table;
+    return true;
+}
+
+std::optional<Move> chooseSetResponseMove(const Game& game, std::string& error) {
+    if (!loadSetResponseTable(game.E.size, error)) {
+        return std::nullopt;
+    }
+
+    std::vector<int> permutation;
+    for (int element = 0; element < game.E.size; element++) {
+        permutation.push_back(element);
+    }
+
+    for (const SetResponseRule& rule : g_setResponseTable->rules) {
+        std::sort(permutation.begin(), permutation.end());
+        do {
+            bool matches = true;
+            for (Move requiredMove : rule.requiredMoves) {
+                Move relabelledRequired = MoveNodeEquivalence::relabelMove(requiredMove, permutation, game.E);
+                if (std::find(game.begin(), game.end(), relabelledRequired) == game.end()) {
+                    matches = false;
+                    break;
+                }
+            }
+
+            if (!matches) {
+                continue;
+            }
+
+            Move response = MoveNodeEquivalence::relabelMove(rule.response, permutation, game.E);
+            if (game.isMoveLegal(response)) {
+                g_lastSetResponseRuleName = "Set response " + rule.text;
+                return response;
+            }
+        } while (std::next_permutation(permutation.begin(), permutation.end()));
+    }
+
+    error = "No set response rule matched this position.";
+    return std::nullopt;
+}
+
 std::string normalizeCommand(std::string input) {
     for (char& c : input) {
         c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
@@ -284,6 +434,18 @@ Move promptManualMove(const Game& game, PlayerMode& playerOneMode, PlayerMode& p
             }
             const std::optional<std::string> ruleName = ruleNameForMove(*strategy, game, *move);
             g_moveRuleNames.push_back(ruleName);
+            return *move;
+        }
+
+        if (command == "r" || command == "response") {
+            std::string error;
+            const std::optional<Move> move = chooseSetResponseMove(game, error);
+            if (!move.has_value()) {
+                message = error;
+                continue;
+            }
+
+            g_moveRuleNames.push_back(g_lastSetResponseRuleName);
             return *move;
         }
 
@@ -338,6 +500,35 @@ Move chooseStrategyMove(
 
     return *move;
 }
+
+Move chooseSetResponseMoveForTurn(
+    const Game& game,
+    PlayerMode playerOneMode,
+    PlayerMode playerTwoMode,
+    bool isPlayerOnesTurn) {
+
+    std::string error;
+    const std::optional<Move> move = chooseSetResponseMove(game, error);
+    if (!move.has_value()) {
+        renderGame(game, playerOneMode, playerTwoMode, "", error);
+        return -1;
+    }
+
+    renderGame(
+        game,
+        playerOneMode,
+        playerTwoMode,
+        "",
+        ManipulateMove::moveLine(
+            game.E,
+            *move,
+            static_cast<int>(game.size()) + 1,
+            isPlayerOnesTurn,
+            g_lastSetResponseRuleName
+        ) + ".");
+
+    return *move;
+}
 } // namespace
 
 int main() {
@@ -347,6 +538,16 @@ int main() {
     PlayerMode playerTwoMode = choosePlayerMode(false);
 
     const int n = promptUniversalSetSize();
+    if (playerTwoMode == PlayerMode::SetResponse) {
+        std::string error;
+        if (!loadSetResponseTable(n, error)) {
+            clearScreen();
+            std::cout << error << "\n";
+            std::cout << "Press any key to exit.";
+            _getch();
+            return 1;
+        }
+    }
 
     const Strategy playerOneStrategy = buildCustomStrategy1();
     const Strategy playerTwoStrategy = buildCustomStrategy2();
@@ -371,6 +572,17 @@ int main() {
         Move move = -1;
         if (mode == PlayerMode::Manual) {
             move = promptManualMove(game, playerOneMode, playerTwoMode);
+        }
+        else if (mode == PlayerMode::SetResponse) {
+            move = chooseSetResponseMoveForTurn(game, playerOneMode, playerTwoMode, isPlayerOnesTurn);
+
+            if (move == -1) {
+                std::cout << "\nPress any key to exit.";
+                _getch();
+                return 1;
+            }
+
+            g_moveRuleNames.push_back(g_lastSetResponseRuleName);
         }
         else {
             const Strategy& strategy = isPlayerOnesTurn ? playerOneStrategy : playerTwoStrategy;
