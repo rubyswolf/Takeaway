@@ -18,7 +18,7 @@ Strategy buildUniversalishHeuristicStrategy()
 
 int main()
 {
-	UniversalSet E = UniversalSet(4); // Create the universal set
+	UniversalSet E = UniversalSet(5); // Create the universal set
 	bool full = false; // Full output expands equivalent positions instead of hiding duplicate subtrees
 	Assumption assumption = assumeTwoWins; // Change to dontAssume to prove the winner before pruning
 	Strategy heuristicStrategy = buildUniversalishHeuristicStrategy();

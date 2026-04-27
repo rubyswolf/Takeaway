@@ -445,7 +445,6 @@ struct MoveNodeSolvedPosition
 struct MoveNodeCache
 {
 	std::map<MoveNodePositionKey, MoveNodeSolvedPosition> solvedPositions;
-	std::map<MoveNodePositionKey, MoveNode*> representativeNodes;
 	unsigned long long skippedDuplicatePositions = 0;
 };
 
@@ -603,8 +602,6 @@ public:
 	bool playerOneCanAlwaysWin; // Whether player one could always win if they play perfectly
 	bool playerTwoCanAlwaysWin; // Whether player two could always win if they play perfectly
 	bool isDuplicateReference = false; // Whether this node only references a solved equivalent position instead of expanding children
-	MoveNode* duplicateTarget = nullptr; // The already-expanded equivalent node this duplicate references
-	std::vector<int> duplicateTargetRelabeling; // Relabels duplicateTarget moves into this duplicate's labels
 	bool isPlayerOnesTurnAtPosition; // Whose turn it is at this position
 	bool isPruned = false; // Whether this node was removed from the visible strategy tree by pruning
 	bool hasPerfectPlayPruneSettings = false; // Whether this node has seen perfect-play pruning settings
@@ -634,16 +631,6 @@ public:
 		if (cachedPosition != cache->solvedPositions.end()) {
 			applySolvedPosition(cachedPosition->second);
 			isDuplicateReference = true;
-			auto representativeNode = cache->representativeNodes.find(positionKey);
-			if (representativeNode != cache->representativeNodes.end()) {
-				duplicateTarget = representativeNode->second;
-				std::optional<std::vector<int>> relabeling =
-					MoveNodeEquivalence::relabelingBetweenEquivalentPositions(duplicateTarget->gamePosition, gamePosition);
-
-				if (relabeling.has_value()) {
-					duplicateTargetRelabeling = *relabeling;
-				}
-			}
 			cache->skippedDuplicatePositions++;
 			return;
 		}
@@ -677,7 +664,6 @@ public:
 			//playerTwoCanAlwaysWin = isPlayerOnesTurn;
 
 			cache->solvedPositions[positionKey] = solvedPosition();
-			cache->representativeNodes[positionKey] = this;
 			return; // So we can just return early and not calculate any children
 		}
 
@@ -760,7 +746,6 @@ public:
 				playerTwoAlwaysWins = !isPlayerOnesTurn;
 
 				cache->solvedPositions[positionKey] = solvedPosition();
-				cache->representativeNodes[positionKey] = this;
 				return; // We can return early since we know the current player will always win from this position by playing this winning move
 			}
 
@@ -886,7 +871,6 @@ public:
 		// END DEBUGGING
 
 		cache->solvedPositions[positionKey] = solvedPosition();
-		cache->representativeNodes[positionKey] = this;
 	}
 
 	MoveNodeSolvedPosition solvedPosition() const
