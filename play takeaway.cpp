@@ -377,17 +377,36 @@ std::optional<Move> chooseSetResponseMove(const Game& game, std::string& error) 
     for (const SetResponseRule& rule : g_setResponseTable->rules) {
         std::sort(permutation.begin(), permutation.end());
         do {
-            bool matches = true;
-            for (Move requiredMove : rule.requiredMoves) {
-                Move relabelledRequired = MoveNodeEquivalence::relabelMove(requiredMove, permutation, game.E);
-                if (std::find(game.begin(), game.end(), relabelledRequired) == game.end()) {
-                    matches = false;
-                    break;
-                }
-            }
+            std::vector<Move> gameMoves(game.begin(), game.end());
+            std::sort(gameMoves.begin(), gameMoves.end());
 
-            if (!matches) {
-                continue;
+            for (const SetResponseRule& rule : g_setResponseTable->rules) {
+                if (rule.requiredMoves.size() != gameMoves.size()) {
+                    continue;
+                }
+
+                std::sort(permutation.begin(), permutation.end());
+                do {
+                    std::vector<Move> relabelledRequiredMoves;
+
+                    for (Move requiredMove : rule.requiredMoves) {
+                        relabelledRequiredMoves.push_back(
+                            MoveNodeEquivalence::relabelMove(requiredMove, permutation, game.E)
+                        );
+                    }
+
+                    std::sort(relabelledRequiredMoves.begin(), relabelledRequiredMoves.end());
+
+                    if (relabelledRequiredMoves != gameMoves) {
+                        continue;
+                    }
+
+                    Move response = MoveNodeEquivalence::relabelMove(rule.response, permutation, game.E);
+                    if (game.isMoveLegal(response)) {
+                        g_lastSetResponseRuleName = "Set response " + rule.text;
+                        return response;
+                    }
+                } while (std::next_permutation(permutation.begin(), permutation.end()));
             }
 
             Move response = MoveNodeEquivalence::relabelMove(rule.response, permutation, game.E);
