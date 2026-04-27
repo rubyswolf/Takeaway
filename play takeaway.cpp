@@ -369,52 +369,43 @@ std::optional<Move> chooseSetResponseMove(const Game& game, std::string& error) 
         return std::nullopt;
     }
 
-    std::vector<int> permutation;
-    for (int element = 0; element < game.E.size; element++) {
-        permutation.push_back(element);
-    }
+    auto moveProfile = [](const std::vector<Move>& moves) {
+        std::vector<int> profile;
+        profile.reserve(moves.size());
+
+        for (Move move : moves) {
+            int count = 0;
+            while (move != 0) {
+                count += static_cast<int>(move & 1);
+                move >>= 1;
+            }
+            profile.push_back(count);
+        }
+
+        std::sort(profile.begin(), profile.end());
+        return profile;
+        };
+
+    std::vector<Move> gameMoves(game.begin(), game.end());
+    const std::vector<int> gameProfile = moveProfile(gameMoves);
 
     for (const SetResponseRule& rule : g_setResponseTable->rules) {
-        std::sort(permutation.begin(), permutation.end());
+        if (rule.requiredMoves.size() != gameMoves.size()) {
+            continue;
+        }
+
+        if (moveProfile(rule.requiredMoves) != gameProfile) {
+            continue;
+        }
+
+        std::vector<int> permutation;
+        for (int element = 0; element < game.E.size; element++) {
+            permutation.push_back(element);
+        }
+
         do {
-            std::vector<Move> gameMoves(game.begin(), game.end());
-            std::sort(gameMoves.begin(), gameMoves.end());
-
-            for (const SetResponseRule& rule : g_setResponseTable->rules) {
-                if (rule.requiredMoves.size() != gameMoves.size()) {
-                    continue;
-                }
-
-                std::vector<int> permutation;
-                for (int element = 0; element < game.E.size; element++) {
-                    permutation.push_back(element);
-                }
-
-                do {
-                    std::vector<Move> relabelledRequiredMoves;
-                    relabelledRequiredMoves.reserve(rule.requiredMoves.size());
-
-                    for (Move requiredMove : rule.requiredMoves) {
-                        relabelledRequiredMoves.push_back(
-                            MoveNodeEquivalence::relabelMove(requiredMove, permutation, game.E)
-                        );
-                    }
-
-                    std::sort(relabelledRequiredMoves.begin(), relabelledRequiredMoves.end());
-
-                    if (relabelledRequiredMoves != gameMoves) {
-                        continue;
-                    }
-
-                    Move response = MoveNodeEquivalence::relabelMove(rule.response, permutation, game.E);
-                    if (game.isMoveLegal(response)) {
-                        g_lastSetResponseRuleName = "Set response " + rule.text;
-                        return response;
-                    }
-                } while (std::next_permutation(permutation.begin(), permutation.end()));
-            }
-
             Move response = MoveNodeEquivalence::relabelMove(rule.response, permutation, game.E);
+
             if (game.isMoveLegal(response)) {
                 g_lastSetResponseRuleName = "Set response " + rule.text;
                 return response;
