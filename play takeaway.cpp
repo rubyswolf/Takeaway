@@ -385,9 +385,14 @@ std::optional<Move> chooseSetResponseMove(const Game& game, std::string& error) 
                     continue;
                 }
 
-                std::sort(permutation.begin(), permutation.end());
+                std::vector<int> permutation;
+                for (int element = 0; element < game.E.size; element++) {
+                    permutation.push_back(element);
+                }
+
                 do {
                     std::vector<Move> relabelledRequiredMoves;
+                    relabelledRequiredMoves.reserve(rule.requiredMoves.size());
 
                     for (Move requiredMove : rule.requiredMoves) {
                         relabelledRequiredMoves.push_back(
