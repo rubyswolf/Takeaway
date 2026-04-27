@@ -404,6 +404,21 @@ std::optional<Move> chooseSetResponseMove(const Game& game, std::string& error) 
         }
 
         do {
+            std::vector<Move> relabelledRequiredMoves;
+            relabelledRequiredMoves.reserve(rule.requiredMoves.size());
+
+            for (Move requiredMove : rule.requiredMoves) {
+                relabelledRequiredMoves.push_back(MoveNodeEquivalence::relabelMove(requiredMove, permutation, game.E));
+            }
+
+            std::sort(relabelledRequiredMoves.begin(), relabelledRequiredMoves.end());
+            std::vector<Move> sortedGameMoves = gameMoves;
+            std::sort(sortedGameMoves.begin(), sortedGameMoves.end());
+
+            if (relabelledRequiredMoves != sortedGameMoves) {
+                continue;
+            }
+
             Move response = MoveNodeEquivalence::relabelMove(rule.response, permutation, game.E);
 
             if (game.isMoveLegal(response)) {
