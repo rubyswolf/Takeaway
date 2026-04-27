@@ -21,7 +21,7 @@ int main()
 	UniversalSet E = UniversalSet(5); // Create the universal set
 	bool full = false; // Full output expands equivalent positions instead of hiding duplicate subtrees
 	Assumption assumption = assumeTwoWins; // Change to dontAssume to prove the winner before pruning
-	int treeGenerationParallelDepth = 2; // Splits child subtree generation for this many levels
+	int treeGenerationParallelDepth = 8; // Splits child subtree generation for this many levels
 	int treeGenerationTimeLimitSeconds = 0; // Set to 0 to run until completion
 	FixedThreadPool treeGenerationPool; // Bounded worker pool for parallel subtree generation
 	Strategy heuristicStrategy = buildUniversalishHeuristicStrategy();
