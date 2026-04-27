@@ -10,6 +10,8 @@
 // The question is who has the winning strategy for n=3 and n=4 and what is that strategy?
 // I aimed to solve this via a brute force search
 
+#pragma once
+
 #include <algorithm> // This lets us reorder and erase collections with helpers like remove_if
 #include <iostream> // This library lets us output to the console window that will be attached to the program when we run it
 #include <fstream> // This lets us write to output to files
@@ -17,6 +19,7 @@
 #include <optional> // This lets us represent values that may or may not be present
 #include <set> // This lets us define sets of items
 #include <map> // This lets us cache solved game positions by a canonical key
+#include <functional> // This lets callers provide optional move-ordering heuristics
 #include <string> // This allows us to work with strings of text
 #include <immintrin.h> // SIMD intrinsics for a manual fast path in hot bitmask checks
 
@@ -446,6 +449,8 @@ struct MoveNodeCache
 	unsigned long long skippedDuplicatePositions = 0;
 };
 
+typedef std::function<std::optional<std::vector<Move>>(const Game&, const std::vector<Move>&, int)> LazyMovePriorityProvider;
+
 namespace MoveNodeEquivalence
 {
 	inline Move relabelMove(Move move, const std::vector<int>& permutation)
@@ -607,6 +612,7 @@ public:
 	bool prunedPlayerTwoIsPerfect = false; // Last perfect-play setting used for player two
 	bool playerOneIsLazy = false; // Whether player one only generates the first move found that can force a win
 	bool playerTwoIsLazy = false; // Whether player two only generates the first move found that can force a win
+	const LazyMovePriorityProvider* lazyMovePriorityProvider = nullptr; // Optional priority groups for lazy players
 
 	// Note that CAN always win is different from ALWAYS wins
 	// 
@@ -615,7 +621,7 @@ public:
 	// But when we assume perfect play we also want to track cases where a win is always possible but not forced
 	// That is, you could lose the game if you played poorly but would always win if you played perfectly
 
-	MoveNode(Game position, unsigned long long* totalNodes = nullptr, Move move = 0, int depth = 0, bool isPlayerOnesTurn = true, bool isWinningNode = false, MoveNodeCache* cache = nullptr, bool playerOneIsLazy = false, bool playerTwoIsLazy = false) : E(position.E), gamePosition(position), move(move), isWinningNode(isWinningNode), isPlayerOnesTurnAtPosition(isPlayerOnesTurn), playerOneIsLazy(playerOneIsLazy), playerTwoIsLazy(playerTwoIsLazy) {
+	MoveNode(Game position, unsigned long long* totalNodes = nullptr, Move move = 0, int depth = 0, bool isPlayerOnesTurn = true, bool isWinningNode = false, MoveNodeCache* cache = nullptr, bool playerOneIsLazy = false, bool playerTwoIsLazy = false, const LazyMovePriorityProvider* lazyMovePriorityProvider = nullptr) : E(position.E), gamePosition(position), move(move), isWinningNode(isWinningNode), isPlayerOnesTurnAtPosition(isPlayerOnesTurn), playerOneIsLazy(playerOneIsLazy), playerTwoIsLazy(playerTwoIsLazy), lazyMovePriorityProvider(lazyMovePriorityProvider) {
 
 		MoveNodeCache localCache;
 		if (cache == nullptr) {
@@ -675,9 +681,10 @@ public:
 			return; // So we can just return early and not calculate any children
 		}
 
-		// Calculate legal moves from this position and create child nodes for each of those moves
-		// But we'll exit early if the player has a winning move and we'll have them simply play it
-		std::vector<Move> legalMoves = position.principalLegalMoves(); // Get the principal legal moves from this position
+		// Calculate legal moves from this position and create child nodes for each of those moves.
+		// Lazy players can use a priority provider so likely-winning moves are tried first without
+		// forcing the heuristic to classify every later rule up front.
+		std::vector<Move> remainingLegalMoves = position.principalLegalMoves(); // Get the principal legal moves from this position
 
 		// Assume both players are forced to always win from this position
 		// We set this false if there exists any way for the player to not win
@@ -700,6 +707,39 @@ public:
 		std::vector<MoveNodeSolvedPosition> childResults;
 		std::set<MoveNodePositionKey> seenChildPositions;
 		bool currentPlayerIsLazy = (isPlayerOnesTurn && playerOneIsLazy) || (!isPlayerOnesTurn && playerTwoIsLazy);
+		bool stoppedBecauseLazyPlayerFoundWin = false;
+		int priorityIndex = 0;
+
+		while (!remainingLegalMoves.empty() && !stoppedBecauseLazyPlayerFoundWin) {
+			std::vector<Move> legalMoves;
+
+			if (currentPlayerIsLazy && lazyMovePriorityProvider != nullptr) {
+				std::optional<std::vector<Move>> priorityMoves =
+					(*lazyMovePriorityProvider)(position, remainingLegalMoves, priorityIndex);
+				priorityIndex++;
+
+				if (!priorityMoves.has_value()) {
+					legalMoves = remainingLegalMoves;
+					remainingLegalMoves.clear();
+				}
+				else {
+					for (Move candidate : *priorityMoves) {
+						auto remainingMove = std::find(remainingLegalMoves.begin(), remainingLegalMoves.end(), candidate);
+						if (remainingMove != remainingLegalMoves.end() && std::find(legalMoves.begin(), legalMoves.end(), candidate) == legalMoves.end()) {
+							legalMoves.push_back(candidate);
+							remainingLegalMoves.erase(remainingMove);
+						}
+					}
+
+					if (legalMoves.empty()) {
+						continue;
+					}
+				}
+			}
+			else {
+				legalMoves = remainingLegalMoves;
+				remainingLegalMoves.clear();
+			}
 
 		for (Move move : legalMoves) { // For each legal move
 			Game newPosition = position; // Create a new game position based on the current position
@@ -708,7 +748,7 @@ public:
 			if (newPosition.principalLegalMoves().empty()) { // If there are no legal moves from this new position
 				// Then playing that move causes us to win immediately
 				// Play it and save it as a winning node
-				children.push_back(new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, true, cache, playerOneIsLazy, playerTwoIsLazy));
+				children.push_back(new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, true, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider));
 
 				// By definition the current player can always win (by playing this move)
 				playerOneCanAlwaysWin = isPlayerOnesTurn;
@@ -729,11 +769,12 @@ public:
 			if (seenChildPositions.find(childPositionKey) != seenChildPositions.end()) {
 				auto cachedChildPosition = cache->solvedPositions.find(childPositionKey);
 				if (cachedChildPosition != cache->solvedPositions.end()) {
-					collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy));
+					collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider));
 					childResults.push_back(cachedChildPosition->second);
 
 					if (currentPlayerIsLazy && playerCanAlwaysWin(cachedChildPosition->second, isPlayerOnesTurn)) {
 						keepOnlyLastCollectedChild(collectedChildren, childResults);
+						stoppedBecauseLazyPlayerFoundWin = true;
 						break;
 					}
 				}
@@ -746,12 +787,13 @@ public:
 
 			auto cachedChildPosition = cache->solvedPositions.find(childPositionKey);
 			if (cachedChildPosition != cache->solvedPositions.end()) {
-				collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy));
+				collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider));
 				childResults.push_back(cachedChildPosition->second);
 				cache->skippedDuplicatePositions++;
 
 				if (currentPlayerIsLazy && playerCanAlwaysWin(cachedChildPosition->second, isPlayerOnesTurn)) {
 					keepOnlyLastCollectedChild(collectedChildren, childResults);
+					stoppedBecauseLazyPlayerFoundWin = true;
 					break;
 				}
 
@@ -759,14 +801,16 @@ public:
 			}
 
 			// Create a new child node for this new position and add it to our temporary list of collected children
-			MoveNode* child = new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy);
+			MoveNode* child = new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider);
 			collectedChildren.push_back(child);
 			childResults.push_back(child->solvedPosition());
 
 			if (currentPlayerIsLazy && child->canAlwaysWin(isPlayerOnesTurn)) {
 				keepOnlyLastCollectedChild(collectedChildren, childResults);
+				stoppedBecauseLazyPlayerFoundWin = true;
 				break;
 			}
+		}
 		}
 
 		// Now we have created child nodes for all of the legal moves from this position and we can add them to our main list of children
@@ -1082,7 +1126,7 @@ public:
 		}
 
 		if (full && isDuplicateReference) {
-			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy);
+			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider);
 
 			if (hasPerfectPlayPruneSettings) {
 				expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);
@@ -1151,7 +1195,7 @@ public:
 
 		if (!full && isDuplicateReference) {
 			if (isPlayerOnesTurn == responsePlayerIsPlayerOne) {
-				MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy);
+				MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider);
 
 				if (hasPerfectPlayPruneSettings) {
 					expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);
@@ -1172,7 +1216,7 @@ public:
 		}
 
 		if (full && isDuplicateReference) {
-			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy);
+			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider);
 
 			if (hasPerfectPlayPruneSettings) {
 				expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);
@@ -1286,7 +1330,7 @@ public:
 		}
 
 		if (full && isDuplicateReference) {
-			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy);
+			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider);
 
 			if (hasPerfectPlayPruneSettings) {
 				expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);

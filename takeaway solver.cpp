@@ -1,5 +1,7 @@
 ﻿#include "takeaway.h" // Include the game logic and solver core
 
+#include "strategy.h"
+
 enum Assumption
 {
 	dontAssume,
@@ -7,18 +9,48 @@ enum Assumption
 	assumeTwoWins
 };
 
+Strategy buildUniversalishHeuristicStrategy()
+{
+	StrategyBuilder builder;
+#include "universalish strategy.cpp"
+	return builder.finish();
+}
+
 int main()
 {
 	UniversalSet E = UniversalSet(4); // Create the universal set
 	bool full = false; // Full output expands equivalent positions instead of hiding duplicate subtrees
 	Assumption assumption = assumeTwoWins; // Change to dontAssume to prove the winner before pruning
+	Strategy heuristicStrategy = buildUniversalishHeuristicStrategy();
+	LazyMovePriorityProvider heuristicPriority =
+		[&heuristicStrategy](const Game& position, const std::vector<Move>& remainingMoves, int priorityIndex) -> std::optional<std::vector<Move>>
+		{
+			if (priorityIndex < 0 || priorityIndex >= heuristicStrategy.rules.size()) {
+				return std::nullopt;
+			}
+
+			const Rule& rule = heuristicStrategy.rules[priorityIndex];
+			if (rule.throw_message.has_value() || !eval(rule.guard, position)) {
+				return std::vector<Move>();
+			}
+
+			std::vector<Move> result;
+			for (Move move : remainingMoves) {
+				if (eval(rule.move, position, move)) {
+					result.push_back(move);
+				}
+			}
+
+			return result;
+		};
+	const LazyMovePriorityProvider* lazyPriorityProvider = assumption == dontAssume ? nullptr : &heuristicPriority;
 
 	// Generate the game tree
 	std::cout << "Generating game tree..." << std::endl;
 	unsigned long long* totalNodes = new unsigned long long(0); // Prepare a counter for how many nodes we generate
 	bool playerOneIsLazy = assumption == assumeOneWins;
 	bool playerTwoIsLazy = assumption == assumeTwoWins;
-	MoveNode gameTree = MoveNode(Game(E), totalNodes, 0, 0, true, false, nullptr, playerOneIsLazy, playerTwoIsLazy); // Create a move node for the initial game position to generate the game tree
+	MoveNode gameTree = MoveNode(Game(E), totalNodes, 0, 0, true, false, nullptr, playerOneIsLazy, playerTwoIsLazy, lazyPriorityProvider); // Create a move node for the initial game position to generate the game tree
 	std::cout << "Game tree generated, generated a total of " << *totalNodes << " nodes" << std::endl;
 
 	// Declare which player can always win if they play perfectly
