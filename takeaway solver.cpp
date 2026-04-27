@@ -21,6 +21,7 @@ int main()
 	UniversalSet E = UniversalSet(5); // Create the universal set
 	bool full = false; // Full output expands equivalent positions instead of hiding duplicate subtrees
 	Assumption assumption = assumeTwoWins; // Change to dontAssume to prove the winner before pruning
+	int treeGenerationParallelDepth = 2; // Splits child subtree generation for this many levels
 	Strategy heuristicStrategy = buildUniversalishHeuristicStrategy();
 	LazyMovePriorityProvider heuristicPriority =
 		[&heuristicStrategy](const Game& position, const std::vector<Move>& remainingMoves, int priorityIndex) -> std::optional<std::vector<Move>>
@@ -50,7 +51,7 @@ int main()
 	unsigned long long* totalNodes = new unsigned long long(0); // Prepare a counter for how many nodes we generate
 	bool playerOneIsLazy = assumption == assumeOneWins;
 	bool playerTwoIsLazy = assumption == assumeTwoWins;
-	MoveNode gameTree = MoveNode(Game(E), totalNodes, 0, 0, true, false, nullptr, playerOneIsLazy, playerTwoIsLazy, lazyPriorityProvider); // Create a move node for the initial game position to generate the game tree
+	MoveNode gameTree = MoveNode(Game(E), totalNodes, 0, 0, true, false, nullptr, playerOneIsLazy, playerTwoIsLazy, lazyPriorityProvider, treeGenerationParallelDepth); // Create a move node for the initial game position to generate the game tree
 	std::cout << "Game tree generated, generated a total of " << *totalNodes << " nodes" << std::endl;
 
 	// Declare which player can always win if they play perfectly
