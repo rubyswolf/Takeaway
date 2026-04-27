@@ -605,6 +605,8 @@ public:
 	bool hasPerfectPlayPruneSettings = false; // Whether this node has seen perfect-play pruning settings
 	bool prunedPlayerOneIsPerfect = false; // Last perfect-play setting used for player one
 	bool prunedPlayerTwoIsPerfect = false; // Last perfect-play setting used for player two
+	bool playerOneIsLazy = false; // Whether player one only generates the first move found that can force a win
+	bool playerTwoIsLazy = false; // Whether player two only generates the first move found that can force a win
 
 	// Note that CAN always win is different from ALWAYS wins
 	// 
@@ -613,7 +615,7 @@ public:
 	// But when we assume perfect play we also want to track cases where a win is always possible but not forced
 	// That is, you could lose the game if you played poorly but would always win if you played perfectly
 
-	MoveNode(Game position, unsigned long long* totalNodes = nullptr, Move move = 0, int depth = 0, bool isPlayerOnesTurn = true, bool isWinningNode = false, MoveNodeCache* cache = nullptr) : E(position.E), gamePosition(position), move(move), isWinningNode(isWinningNode), isPlayerOnesTurnAtPosition(isPlayerOnesTurn) {
+	MoveNode(Game position, unsigned long long* totalNodes = nullptr, Move move = 0, int depth = 0, bool isPlayerOnesTurn = true, bool isWinningNode = false, MoveNodeCache* cache = nullptr, bool playerOneIsLazy = false, bool playerTwoIsLazy = false) : E(position.E), gamePosition(position), move(move), isWinningNode(isWinningNode), isPlayerOnesTurnAtPosition(isPlayerOnesTurn), playerOneIsLazy(playerOneIsLazy), playerTwoIsLazy(playerTwoIsLazy) {
 
 		MoveNodeCache localCache;
 		if (cache == nullptr) {
@@ -697,6 +699,7 @@ public:
 		std::vector<MoveNode*> collectedChildren;
 		std::vector<MoveNodeSolvedPosition> childResults;
 		std::set<MoveNodePositionKey> seenChildPositions;
+		bool currentPlayerIsLazy = (isPlayerOnesTurn && playerOneIsLazy) || (!isPlayerOnesTurn && playerTwoIsLazy);
 
 		for (Move move : legalMoves) { // For each legal move
 			Game newPosition = position; // Create a new game position based on the current position
@@ -705,7 +708,7 @@ public:
 			if (newPosition.principalLegalMoves().empty()) { // If there are no legal moves from this new position
 				// Then playing that move causes us to win immediately
 				// Play it and save it as a winning node
-				children.push_back(new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, true, cache));
+				children.push_back(new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, true, cache, playerOneIsLazy, playerTwoIsLazy));
 
 				// By definition the current player can always win (by playing this move)
 				playerOneCanAlwaysWin = isPlayerOnesTurn;
@@ -726,8 +729,13 @@ public:
 			if (seenChildPositions.find(childPositionKey) != seenChildPositions.end()) {
 				auto cachedChildPosition = cache->solvedPositions.find(childPositionKey);
 				if (cachedChildPosition != cache->solvedPositions.end()) {
-					collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache));
+					collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy));
 					childResults.push_back(cachedChildPosition->second);
+
+					if (currentPlayerIsLazy && playerCanAlwaysWin(cachedChildPosition->second, isPlayerOnesTurn)) {
+						keepOnlyLastCollectedChild(collectedChildren, childResults);
+						break;
+					}
 				}
 
 				cache->skippedDuplicatePositions++;
@@ -738,16 +746,27 @@ public:
 
 			auto cachedChildPosition = cache->solvedPositions.find(childPositionKey);
 			if (cachedChildPosition != cache->solvedPositions.end()) {
-				collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache));
+				collectedChildren.push_back(new MoveNode(newPosition, nullptr, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy));
 				childResults.push_back(cachedChildPosition->second);
 				cache->skippedDuplicatePositions++;
+
+				if (currentPlayerIsLazy && playerCanAlwaysWin(cachedChildPosition->second, isPlayerOnesTurn)) {
+					keepOnlyLastCollectedChild(collectedChildren, childResults);
+					break;
+				}
+
 				continue;
 			}
 
 			// Create a new child node for this new position and add it to our temporary list of collected children
-			MoveNode* child = new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, false, cache);
+			MoveNode* child = new MoveNode(newPosition, totalNodes, move, depth + 1, !isPlayerOnesTurn, false, cache, playerOneIsLazy, playerTwoIsLazy);
 			collectedChildren.push_back(child);
 			childResults.push_back(child->solvedPosition());
+
+			if (currentPlayerIsLazy && child->canAlwaysWin(isPlayerOnesTurn)) {
+				keepOnlyLastCollectedChild(collectedChildren, childResults);
+				break;
+			}
 		}
 
 		// Now we have created child nodes for all of the legal moves from this position and we can add them to our main list of children
@@ -844,6 +863,33 @@ public:
 		playerTwoAlwaysWins = solvedPosition.playerTwoAlwaysWins;
 		playerOneCanAlwaysWin = solvedPosition.playerOneCanAlwaysWin;
 		playerTwoCanAlwaysWin = solvedPosition.playerTwoCanAlwaysWin;
+	}
+
+	bool playerCanAlwaysWin(const MoveNodeSolvedPosition& solvedPosition, bool isPlayerOne)
+	{
+		return isPlayerOne ? solvedPosition.playerOneCanAlwaysWin : solvedPosition.playerTwoCanAlwaysWin;
+	}
+
+	void keepOnlyLastCollectedChild(std::vector<MoveNode*>& collectedChildren, std::vector<MoveNodeSolvedPosition>& childResults)
+	{
+		if (collectedChildren.empty() || childResults.empty()) {
+			return;
+		}
+
+		MoveNode* winningChild = collectedChildren.back();
+		MoveNodeSolvedPosition winningChildResult = childResults.back();
+
+		for (int i = 0; i + 1 < collectedChildren.size(); i++) {
+			delete collectedChildren[i];
+		}
+
+		collectedChildren = { winningChild };
+		childResults = { winningChildResult };
+	}
+
+	bool shouldStopOutputAtForcedWin() const
+	{
+		return !playerOneIsLazy && !playerTwoIsLazy && (playerOneAlwaysWins || playerTwoAlwaysWins);
 	}
 
 	// A debugging utility I made to detect whenever there's something wrong with a node and print some useful debugging info
@@ -1022,7 +1068,7 @@ public:
 			return {};
 		}
 
-		if (isWinningNode || playerOneAlwaysWins || playerTwoAlwaysWins) { // Match the tree output by stopping once the winner is forced.
+		if (isWinningNode || shouldStopOutputAtForcedWin()) { // Match the tree output by stopping once the winner is forced.
 			std::string gameString = ""; // A string to build up the game string for this winning leaf node
 			for (int i = 0; i < path.size(); i++) { // Print out the moves that led to this position to see how we got here
 				gameString += std::to_string(path[i]) + ((i + 1 < path.size()) ? "," : ""); // Print the move and a comma to separate the moves except for the last move in the position
@@ -1036,7 +1082,7 @@ public:
 		}
 
 		if (full && isDuplicateReference) {
-			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode);
+			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy);
 
 			if (hasPerfectPlayPruneSettings) {
 				expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);
@@ -1099,13 +1145,13 @@ public:
 			return {};
 		}
 
-		if (isWinningNode || playerOneAlwaysWins || playerTwoAlwaysWins) {
+		if (isWinningNode || shouldStopOutputAtForcedWin()) {
 			return {};
 		}
 
 		if (!full && isDuplicateReference) {
 			if (isPlayerOnesTurn == responsePlayerIsPlayerOne) {
-				MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode);
+				MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy);
 
 				if (hasPerfectPlayPruneSettings) {
 					expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);
@@ -1126,7 +1172,7 @@ public:
 		}
 
 		if (full && isDuplicateReference) {
-			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode);
+			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy);
 
 			if (hasPerfectPlayPruneSettings) {
 				expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);
@@ -1222,7 +1268,7 @@ public:
 			indent += "| "; // We can use a vertical bar and a space to create a visual indentation for each level of the tree
 		}
 
-		if (playerOneAlwaysWins || playerTwoAlwaysWins) // If either player is forced to win from this position no matter what
+		if (shouldStopOutputAtForcedWin()) // If either player is forced to win from this position no matter what
 		{
 			return { indent + "# " + moveSymbols };
 		}
@@ -1240,7 +1286,7 @@ public:
 		}
 
 		if (full && isDuplicateReference) {
-			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode);
+			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy);
 
 			if (hasPerfectPlayPruneSettings) {
 				expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);
@@ -1257,6 +1303,10 @@ public:
 			generateTreeDiagramChildLines(full, !isPlayerOnesTurn, indentation, outputRelabeling);
 
 		if (!full && move != 0 && subDiagramLines.empty()) {
+			if (playerOneAlwaysWins || playerTwoAlwaysWins) {
+				return { indent + "# " + moveSymbols };
+			}
+
 			return {};
 		}
 

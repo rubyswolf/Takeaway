@@ -1,34 +1,47 @@
 ﻿#include "takeaway.h" // Include the game logic and solver core
 
+enum Assumption
+{
+	dontAssume,
+	assumeOneWins,
+	assumeTwoWins
+};
+
 int main()
 {
 	UniversalSet E = UniversalSet(4); // Create the universal set
 	bool full = false; // Full output expands equivalent positions instead of hiding duplicate subtrees
+	Assumption assumption = assumeTwoWins; // Change to dontAssume to prove the winner before pruning
 
 	// Generate the game tree
 	std::cout << "Generating game tree..." << std::endl;
 	unsigned long long* totalNodes = new unsigned long long(0); // Prepare a counter for how many nodes we generate
-	MoveNode gameTree = MoveNode(Game(E), totalNodes); // Create a move node for the initial game position to generate the game tree
+	bool playerOneIsLazy = assumption == assumeOneWins;
+	bool playerTwoIsLazy = assumption == assumeTwoWins;
+	MoveNode gameTree = MoveNode(Game(E), totalNodes, 0, 0, true, false, nullptr, playerOneIsLazy, playerTwoIsLazy); // Create a move node for the initial game position to generate the game tree
 	std::cout << "Game tree generated, generated a total of " << *totalNodes << " nodes" << std::endl;
 
 	// Declare which player can always win if they play perfectly
-	std::cout << "Player " << (gameTree.playerOneCanAlwaysWin ? "one" : "two") << " can always win!" << std::endl << std::endl;
+	bool playerOneCanAlwaysWin = assumption == assumeOneWins || (assumption == dontAssume && gameTree.playerOneCanAlwaysWin);
+	std::cout << "Player " << (playerOneCanAlwaysWin ? "one" : "two") << (assumption == dontAssume ? " can always win!" : " is assumed to always win!") << std::endl << std::endl;
 
 	//# Optimise the game tree for the player that can always win
 
-	// Remove all nodes where the player that can always win makes a move that does not lead them to always win
-	// This makes that player play perfectly
-	std::cout << "Pruning for perfect play for player " << (gameTree.playerOneCanAlwaysWin ? "one" : "two") << " only..." << std::endl;
-	unsigned long long* totalPrunedNodes = new unsigned long long(0); // Prepare a counter for how many nodes we prune
-	gameTree.perfectPlayPrune(gameTree.playerOneCanAlwaysWin, !gameTree.playerOneCanAlwaysWin, totalPrunedNodes);
-	std::cout << "Perfect play pruning complete, pruned a total of " << *totalPrunedNodes << " nodes" << std::endl;
+	if (assumption == dontAssume) {
+		// Remove all nodes where the player that can always win makes a move that does not lead them to always win
+		// This makes that player play perfectly
+		std::cout << "Pruning for perfect play for player " << (gameTree.playerOneCanAlwaysWin ? "one" : "two") << " only..." << std::endl;
+		unsigned long long* totalPrunedNodes = new unsigned long long(0); // Prepare a counter for how many nodes we prune
+		gameTree.perfectPlayPrune(gameTree.playerOneCanAlwaysWin, !gameTree.playerOneCanAlwaysWin, totalPrunedNodes);
+		std::cout << "Perfect play pruning complete, pruned a total of " << *totalPrunedNodes << " nodes" << std::endl;
 
-	// Since the player that can always win often has multiple equally perfect moves
-	// To reduce the game tree futher, we can make them simply always play the first perfect move available
-	std::cout << "Pruning by making player " << (gameTree.playerOneCanAlwaysWin ? "one" : "two") << " always choose the first optimal move available..." << std::endl;
-	*totalPrunedNodes = 0; // Reset the counter
-	gameTree.alwaysChooseFirstMovePrune(gameTree.playerOneCanAlwaysWin, !gameTree.playerOneCanAlwaysWin, totalPrunedNodes); // Now we can also prune for the winning player to always choose the first optimal move available since we know they always win from the initial position
-	std::cout << "First move pruning complete, pruned a total of " << *totalPrunedNodes << " nodes" << std::endl;
+		// Since the player that can always win often has multiple equally perfect moves
+		// To reduce the game tree futher, we can make them simply always play the first perfect move available
+		std::cout << "Pruning by making player " << (gameTree.playerOneCanAlwaysWin ? "one" : "two") << " always choose the first optimal move available..." << std::endl;
+		*totalPrunedNodes = 0; // Reset the counter
+		gameTree.alwaysChooseFirstMovePrune(gameTree.playerOneCanAlwaysWin, !gameTree.playerOneCanAlwaysWin, totalPrunedNodes); // Now we can also prune for the winning player to always choose the first optimal move available since we know they always win from the initial position
+		std::cout << "First move pruning complete, pruned a total of " << *totalPrunedNodes << " nodes" << std::endl;
+	}
 
 	//# Save the results
 
