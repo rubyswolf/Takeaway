@@ -32,6 +32,8 @@
 #include <chrono> // This lets long generation runs stop at an internal benchmark deadline
 #include <exception> // This lets generation report an internal timeout cleanly
 #include <string> // This allows us to work with strings of text
+#include <iomanip> // This lets move history align move numbers neatly
+#include <sstream> // This lets move history build padded move lines
 #include <immintrin.h> // SIMD intrinsics for a manual fast path in hot bitmask checks
 
 // Let's define elements of E to be integers
@@ -130,9 +132,12 @@ namespace ManipulateMove
 	// Convert the move into a full line of text like "P1 move 1: ●○○○ (1 = {1})" and optionally attach a label like "rule name"
 	// This is useful when we want to print a move in a readable way that contains the player number, move number, symbols, bitmask number and set
 	inline std::string moveLine(UniversalSet E, Move move, int moveNumber, bool isPlayerOnesTurn, std::optional<std::string> moveLabel = std::nullopt) {
+		std::ostringstream moveNumberText;
+		moveNumberText << std::setw(2) << moveNumber;
+
 		std::string line =
 			"P" + std::to_string(isPlayerOnesTurn ? 1 : 2) + // Player indicator
-			" move " + std::to_string(moveNumber) + ": " + // Move number
+			" move " + moveNumberText.str() + ": " + // Move number
 			toSymbols(E, move, isPlayerOnesTurn) + // Symbols
 			" (" + toString(E, move) + ")"; // Set and bitmask number
 
