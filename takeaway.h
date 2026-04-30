@@ -1427,25 +1427,18 @@ public:
 		}
 
 		if (!full && isDuplicateReference) {
-			if (isPlayerOnesTurn == responsePlayerIsPlayerOne) {
-				MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider);
+			MoveNode expandedNode = MoveNode(gamePosition, nullptr, move, 0, isPlayerOnesTurnAtPosition, isWinningNode, nullptr, playerOneIsLazy, playerTwoIsLazy, lazyMovePriorityProvider);
 
-				if (hasPerfectPlayPruneSettings) {
-					expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);
-				}
-
-				for (MoveNode* child : expandedNode.children) {
-					if (child->isPruned) {
-						continue;
-					}
-
-					std::vector<Move> newPath = path;
-					newPath.push_back(MoveNodeEquivalence::relabelMove(child->move, outputRelabeling, E));
-					return { formatSetResponseRule(newPath) };
-				}
+			if (hasPerfectPlayPruneSettings) {
+				expandedNode.perfectPlayPrune(prunedPlayerOneIsPerfect, prunedPlayerTwoIsPerfect, nullptr, isPlayerOnesTurnAtPosition);
 			}
 
-			return {};
+			return expandedNode.generateSetResponseLinesFromChildren(
+				full,
+				responsePlayerIsPlayerOne,
+				isPlayerOnesTurn,
+				path,
+				outputRelabeling);
 		}
 
 		if (full && isDuplicateReference) {
