@@ -25,8 +25,8 @@ IF (is_legal(non_singletons_compliment))
 {
    PICK(non_singletons_compliment, "Non singleton's compliment");
 }
-IF (no_even_counter_reduction_possible.ever_after(anything))
+IF (no_even_counter_reduction_possible.ever_after(legal))
 {
-   PICK(anything & causes(no_even_counter_reduction_possible), "Prevent counter reduction");
+   PICK(legal & causes(no_even_counter_reduction_possible), "Prevent counter reduction");
 }
 PICK(legal, "Any legal move");
