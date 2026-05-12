@@ -125,4 +125,4 @@ IF (move1HasSize2) {
     }
 }
 
-PICK(anything, "Arbitrary legal move");
+PICK(legal, "Arbitrary legal move");

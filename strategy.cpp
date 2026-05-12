@@ -32,7 +32,7 @@
 #endif
 
 namespace {
-void showMoveWhereErrorAndPause(const Game& position);
+void showMoveWhereErrorAndPause(const Game& position, int matchCount);
 std::optional<std::string> findRuleNameForMoveImpl(const Strategy& strategy, const Game& position, Move move);
 
 std::pair<std::size_t, std::size_t> rootSliceBounds(
@@ -66,20 +66,11 @@ bool PickedOnMoveNode::eval(const Game& game, Element element) const {
     return ManipulateMove::hasElement(game[moveNumber - 1], element);
 }
 
-PickedInAnyNode::PickedInAnyNode(const MoveTest& test, PlayerFilter player_filter)
-    : player_filter(player_filter), test(test) {}
+PickedInAnyNode::PickedInAnyNode(const MoveTest& test)
+    : test(test) {}
 
 bool PickedInAnyNode::eval(const Game& game, Element element) const {
-    for (int i = 0; i < static_cast<int>(game.size()); i++) {
-        const bool isMyMove = (i % 2) == (game.size() % 2);
-        if (player_filter == Me && !isMyMove) {
-            continue;
-        }
-        if (player_filter == Opponent && isMyMove) {
-            continue;
-        }
-
-        const Move move = game[i];
+    for (Move move : game) {
         if (::eval(test, game, move) && ManipulateMove::hasElement(move, element)) {
             return true;
         }
@@ -122,7 +113,11 @@ bool PassElementNode::eval(const Game&, Element) const {
     return true;
 }
 
-bool AnythingNode::eval(const Game& game, Move move) const {
+bool AnythingNode::eval(const Game&, Move) const {
+    return true;
+}
+
+bool IsLegalMoveNode::eval(const Game& game, Move move) const {
     return game.isMoveLegal(move);
 }
 
@@ -132,6 +127,30 @@ bool NothingNode::eval(const Game&, Move) const {
 
 bool EverythingNode::eval(const Game& game, Move move) const {
     return move == game.E.bitmask;
+}
+
+bool IsMyMoveNode::eval(const Game& game, Move move) const {
+    for (int i = 0; i < static_cast<int>(game.size()); i++) {
+        if (game[i] != move) {
+            continue;
+        }
+
+        return (i % 2) == (game.size() % 2);
+    }
+
+    return false;
+}
+
+bool IsOpponentsMoveNode::eval(const Game& game, Move move) const {
+    for (int i = 0; i < static_cast<int>(game.size()); i++) {
+        if (game[i] != move) {
+            continue;
+        }
+
+        return (i % 2) != (game.size() % 2);
+    }
+
+    return false;
 }
 
 AllElementsNode::AllElementsNode(const ElementTest& test) : test(test) {}
@@ -258,10 +277,10 @@ bool SelectMoveTestNode::eval(const Game& game, Move move) const {
     return ::eval(cond, game) ? ::eval(a, game, move) : ::eval(b, game, move);
 }
 
-SuchThatNode::SuchThatNode(const MoveTest& move_test, const Condition& condition)
+CausesNode::CausesNode(const MoveTest& move_test, const Condition& condition)
     : move_test(move_test), condition(condition) {}
 
-bool SuchThatNode::eval(const Game& game, Move move) const {
+bool CausesNode::eval(const Game& game, Move move) const {
     if (!::eval(move_test, game, move)) {
         return false;
     }
@@ -485,13 +504,21 @@ int MoveWhereNode::eval(const Game& game) const {
         return 0;
     }
 
+    int matchedMoveNumber = 0;
+    int matchCount = 0;
+
     for (int i = 0; i < static_cast<int>(game.size()); i++) {
         if (::eval(test, game, game[i])) {
-            return i + 1;
+            matchedMoveNumber = i + 1;
+            matchCount++;
         }
     }
 
-    showMoveWhereErrorAndPause(game);
+    if (matchCount == 1) {
+        return matchedMoveNumber;
+    }
+
+    showMoveWhereErrorAndPause(game, matchCount);
     return 0;
 }
 
@@ -533,21 +560,12 @@ ElementTest picked_on_move(const IntExpr& move_number) {
 }
 
 ElementTest picked_in_any(const MoveTest& test) {
-    return ElementTest{ std::make_shared<PickedInAnyNode>(test, PickedInAnyNode::AnyPlayer) };
-}
-
-ElementTest picked_by_me(const MoveTest& test) {
-    return ElementTest{ std::make_shared<PickedInAnyNode>(test, PickedInAnyNode::Me) };
-}
-
-ElementTest picked_by_opponent(const MoveTest& test) {
-    return ElementTest{ std::make_shared<PickedInAnyNode>(test, PickedInAnyNode::Opponent) };
+    return ElementTest{ std::make_shared<PickedInAnyNode>(test) };
 }
 
 const ElementTest fail = ElementTest{ std::make_shared<FailElementNode>() };
 const ElementTest pass = ElementTest{ std::make_shared<PassElementNode>() };
-const ElementTest is_singleton = ElementTest{ std::make_shared<IsSingletonNode>() };
-const ElementTest are_singleton = is_singleton;
+const ElementTest are_singleton = ElementTest{ std::make_shared<IsSingletonNode>() };
 
 ElementTest operator~(const ElementTest& inner) {
     return ElementTest{ std::make_shared<NotElementTestNode>(inner) };
@@ -589,6 +607,10 @@ MoveTest any_from(const IntExpr& n, const ElementTest& test) {
     return MoveTest{ std::make_shared<AnyFromNode>(n, test) };
 }
 
+MoveTest causes(const Condition& cond) {
+    return MoveTest{ std::make_shared<CausesNode>(anything, cond) };
+}
+
 MoveTest operator~(const MoveTest& inner) {
     return MoveTest{ std::make_shared<NotMoveTestNode>(inner) };
 }
@@ -602,8 +624,11 @@ MoveTest operator|(const MoveTest& a, const MoveTest& b) {
 }
 
 const MoveTest anything = MoveTest{ std::make_shared<AnythingNode>() };
+const MoveTest legal = MoveTest{ std::make_shared<IsLegalMoveNode>() };
 const MoveTest nothing = MoveTest{ std::make_shared<NothingNode>() };
 const MoveTest everything = MoveTest{ std::make_shared<EverythingNode>() };
+const MoveTest is_my_move = MoveTest{ std::make_shared<IsMyMoveNode>() };
+const MoveTest is_opponents_move = MoveTest{ std::make_shared<IsOpponentsMoveNode>() };
 const Condition TRUE = Condition{ std::make_shared<TrueNode>() };
 const Condition FALSE = Condition{ std::make_shared<FalseNode>() };
 
@@ -781,10 +806,6 @@ MoveTestWhenBuilder MoveTest::when(const Condition& cond) const {
     return MoveTestWhenBuilder{ *this, cond };
 }
 
-MoveTest MoveTest::such_that(const Condition& cond) const {
-    return MoveTest{ std::make_shared<SuchThatNode>(*this, cond) };
-}
-
 MoveTest::TimesPickedProxy::operator ElementIntExpr() const {
     return ElementIntExpr{ std::make_shared<TimesPickedCountNode>(*owner) };
 }
@@ -934,12 +955,13 @@ void printHistory(const Game& game) {
     }
 }
 
-void showMoveWhereErrorAndPause(const Game& position) {
+void showMoveWhereErrorAndPause(const Game& position, int matchCount) {
     std::lock_guard<std::mutex> lock(g_strategy_output_mutex);
     configureConsoleForUnicode();
-    std::cout << "move_where did not match any move in the game.\n\n";
+    std::cout << "move_where expected exactly 1 matching move, but found " << matchCount << ".\n\n";
     printHistory(position);
-    g_strategy_runtime_error = "move_where: no move in the game passed the move test";
+    g_strategy_runtime_error =
+        "move_where: expected exactly 1 matching move, but found " + std::to_string(matchCount);
 }
 
 void showIllegalMoveErrorAndPause(const Game& position, Move move, const std::optional<std::string>& ruleName) {
@@ -966,21 +988,26 @@ void showIllegalMoveErrorAndPause(const Game& position, Move move, const std::op
 void showNoMatchingMoveErrorAndPause(const Game& position) {
     std::lock_guard<std::mutex> lock(g_strategy_output_mutex);
     configureConsoleForUnicode();
-    std::cout << "No move matched the strategy rules.\n\n";
+    std::cout << "No strategy rule was active.\n\n";
     printHistory(position);
-    g_strategy_runtime_error = "no move matched the strategy rules";
+    g_strategy_runtime_error = "no strategy rule was active";
 }
 
-void showSuchThatNoMatchErrorAndPause(const Game& position, const std::optional<std::string>& ruleName) {
+void showActiveRuleNoCandidateErrorAndPause(const Game& position, const std::optional<std::string>& ruleName) {
     std::lock_guard<std::mutex> lock(g_strategy_output_mutex);
     configureConsoleForUnicode();
-    std::cout << "such_that did not match any move that met the condition";
+    std::cout << "Active strategy rule did not match any candidate moves";
     if (ruleName.has_value()) {
         std::cout << " for rule \"" << *ruleName << "\"";
     }
     std::cout << ".\n\n";
     printHistory(position);
-    g_strategy_runtime_error = "such_that did not match any move that met the condition";
+    if (ruleName.has_value()) {
+        g_strategy_runtime_error = "active strategy rule did not match any candidate moves for rule \"" + *ruleName + "\"";
+    }
+    else {
+        g_strategy_runtime_error = "active strategy rule did not match any candidate moves";
+    }
 }
 
 void showCustomThrowErrorAndPause(const Game& position, const std::string& message) {
@@ -989,30 +1016,6 @@ void showCustomThrowErrorAndPause(const Game& position, const std::string& messa
     std::cout << message << "\n\n";
     printHistory(position);
     g_strategy_runtime_error = message;
-}
-
-bool suchThatMatchedUnderlyingMovesButNoCondition(const MoveTest& test, const Game& position, const std::vector<Move>& candidates) {
-    const auto suchThat = std::dynamic_pointer_cast<SuchThatNode>(test.ptr);
-    if (!suchThat) {
-        return false;
-    }
-
-    bool matchedUnderlying = false;
-    for (Move candidate : candidates) {
-        if (!::eval(suchThat->move_test, position, candidate)) {
-            continue;
-        }
-
-        matchedUnderlying = true;
-
-        Game next = position;
-        next.playMove(candidate);
-        if (::eval(suchThat->condition, next)) {
-            return false;
-        }
-    }
-
-    return matchedUnderlying;
 }
 
 void throwIfRuleAllowsIllegalMoves(const Rule& rule, const Game& position) {
@@ -1059,10 +1062,8 @@ std::vector<Move> allowedFromCandidates(const Strategy& strategy, const Game& po
             return result;
         }
 
-        if (suchThatMatchedUnderlyingMovesButNoCondition(rule.move, position, candidates)) {
-            showSuchThatNoMatchErrorAndPause(position, rule.name);
-            return {};
-        }
+        showActiveRuleNoCandidateErrorAndPause(position, rule.name);
+        return {};
     }
 
     if (!candidates.empty()) {

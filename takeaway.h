@@ -65,19 +65,6 @@ struct UniversalSet {
 // Let's define some ways we can manipulate moves
 namespace ManipulateMove
 {
-	// Flip every bit in the mask to get the compliment
-	// That is, every item that was in the set is now out of the set and every item that was out of the set is now in the set
-	// This is equivalent to the operation E\move in set theory
-	inline Move compliment(UniversalSet E, Move move)
-	{
-		// Doing 1 - x flips a bit because 1 - 0 = 1 and 1 - 1 = 0
-		// Assuming we have a full number of 1s like 1111...,
-		// if we subtract some number then for each digit it will look like 1-x
-		// There is no carry to worry about as a single digit cannot subtract more than 1 and we're taking from 1
-		// The full set bit mask is exactly this 1111... we're after
-		return E.bitmask - move; // Subtracting the move mask from the full E bitmask gives the compliment
-	}
-
 	// Returns 1 if the move set contains the element at the given index, and 0 otherwise
 	// Note that computers count in binary starting from zero so the first element is actually element 0, second is 1 ...
 	inline Move hasElement(Move move, int elementIndex)
@@ -175,26 +162,26 @@ namespace ManipulateMove
 // 
 // To actually do this in practice, we need a proper definition of what a "symmetry" is
 // Here's how I'll define it:
-// The "symmetry" of a game state/position is a list of "interchangables"
-// An "interchangable" is a set of elements which are interchangable with one another,
+// The "symmetry" of a game state/position is a list of "interchangeables"
+// An "interchangeable" is a set of elements which are interchangeable with one another,
 // that means you can swap their labels around freely without changing the underlying game
 // For example in the inital game state at n=4 then the symmetry is [{1,2,3,4}]
-// This is because 1, 2, 3 and 4 are all interchangable through relabelling, doesn't matter which ones you pick
+// This is because 1, 2, 3 and 4 are all interchangeable through relabelling, doesn't matter which ones you pick
 // Say player one picks {1}
 // Now that gives meaning to 1, we can fully specify it as "the element that player one picked on their first move"
-// And 2, 3 and 4 are all an interchangable group meaning "Any of the three elements player one didn't pick at the start"
+// And 2, 3 and 4 are all an interchangeable group meaning "Any of the three elements player one didn't pick at the start"
 // So the symmetry of this new state is now [{1}, {2,3,4}]
 //
 // If player one were to pick {1,2} from the start, the symmetry would instead be [{1,2}, {3,4}]
-// 1 and 2 are interchangable as "one of the two elements player one picked on their first move"
-// 3 and 4 are interchangable as "one of the two elements player didn't pick on their first move"
+// 1 and 2 are interchangeable as "one of the two elements player one picked on their first move"
+// 3 and 4 are interchangeable as "one of the two elements player didn't pick on their first move"
 
-// So we break elements up into interchangables
+// So we break elements up into interchangeables
 // based on how you can specify them from what moves they were and weren't selected in
 
 // Let's definine these with code:
-typedef std::set<Move> Interchangable;
-typedef std::vector<Interchangable> Symmetry;
+typedef std::set<Element> Interchangeable;
+typedef std::vector<Interchangeable> Symmetry;
 
 // Let's define what a game is, it will simply be a list of moves
 class Game : public std::vector<Move> // This colon (:) here means extends, so a Game is a vector of moves but with our own extra features
@@ -202,12 +189,12 @@ class Game : public std::vector<Move> // This colon (:) here means extends, so a
 public:
 	Game(UniversalSet E) : E(E) {
 		// Initialize the symmetry of the game
-		// At the start of the game all elements are interchangable so we have one interchangable set containing all elements
-		Interchangable initialInterchangable; // Create a new interchangable to represent the initial interchangables
+		// At the start of the game all elements are interchangeable so we have one interchangeable set containing all elements
+		Interchangeable initialInterchangeable; // Create a new interchangeable to represent the initial interchangeables
 		for (int i = 0; i < E.size; i++) { // For each element in the universal set E
-			initialInterchangable.insert(i); // Add it to the initial interchangable set
+			initialInterchangeable.insert(i); // Add it to the initial interchangeable set
 		}
-		gameSymmetry.push_back(initialInterchangable); // Add this initial interchangable set to the game's symmetry
+		gameSymmetry.push_back(initialInterchangeable); // Add this initial interchangeable set to the game's symmetry
 	}
 
 	UniversalSet E; // The universal set for the game
@@ -225,35 +212,35 @@ public:
 		// The way an element can be "specified"
 		// Is through what moves it was or wasn't selected in
 		// This new move will categorize the elements depending on whether or not they were selected
-		// So if we have elements within the same interchangable that are categorized differently by the new move
-		// they are no longer interchangable and their symmetry is broken
+		// So if we have elements within the same interchangeable that are categorized differently by the new move
+		// they are no longer interchangeable and their symmetry is broken
 
 		Symmetry newSymmetry; // A new symmetry to store the updated symmetry after making the move
 
-		// Loop over each interchangable in the current symmetry
-		for (Interchangable interchangable : gameSymmetry) {
-			// We will split this interchangable into two new interchangables based on whether or not the elements were selected in the new move
-			Interchangable selected; // A new interchangable to store the elements that were selected in the new move
-			Interchangable notSelected; // A new interchangable to store the elements that were not selected in the new move
+		// Loop over each interchangeable in the current symmetry
+		for (Interchangeable interchangeable : gameSymmetry) {
+			// We will split this interchangeable into two new interchangeables based on whether or not the elements were selected in the new move
+			Interchangeable selected; // A new interchangeable to store the elements that were selected in the new move
+			Interchangeable notSelected; // A new interchangeable to store the elements that were not selected in the new move
 
-			for (Move element : interchangable) { // For each element in the current interchangable
+			for (Move element : interchangeable) { // For each element in the current interchangeable
 				if (ManipulateMove::hasElement(move, element)) { // If this element was selected in the new move
-					selected.insert(element); // Add it to the selected interchangable
+					selected.insert(element); // Add it to the selected interchangeable
 				}
 				else { // Otherwise if this element was not selected in the new move
-					notSelected.insert(element); // Add it to the notSelected interchangable
+					notSelected.insert(element); // Add it to the notSelected interchangeable
 				}
 			}
 
-			// Now we have two new interchangables to reintroduce to our symmetry
+			// Now we have two new interchangeables to reintroduce to our symmetry
 			// But we only want to add them if they are not empty
 			if (!selected.empty())
 			{
-				newSymmetry.push_back(selected); // Add the selected interchangable to our symmetry
+				newSymmetry.push_back(selected); // Add the selected interchangeable to our symmetry
 			}
 			if (!notSelected.empty())
 			{
-				newSymmetry.push_back(notSelected); // Add the notSelected interchangable to our symmetry
+				newSymmetry.push_back(notSelected); // Add the notSelected interchangeable to our symmetry
 			}
 		}
 
@@ -293,20 +280,20 @@ public:
 	}
 
 	// Get only the principal moves from this position
-	std::vector<Move> principalMoves(int interchangableIndex = 0, std::vector<int> elements = {}) const {
-		// When creating a principal move we can chose any number of elements from each interchangable
-		// We can choose anywere from 0 to all of the elements in each interchangable
-		// So we can generate this recursively by first choosing how many elements we want from the first interchangable
-		// then how many from the second and so on until we have made a choice for each interchangable
+	std::vector<Move> principalMoves(int interchangeableIndex = 0, std::vector<int> elements = {}) const {
+		// When creating a principal move we can chose any number of elements from each interchangeable
+		// We can choose anywere from 0 to all of the elements in each interchangeable
+		// So we can generate this recursively by first choosing how many elements we want from the first interchangeable
+		// then how many from the second and so on until we have made a choice for each interchangeable
 		// And then we combine all possible choices together to get the full list of principal moves
 		// This needs to be done depth first so that we generate the moves in ascending order (smallest moves first)
 
-		if (interchangableIndex == gameSymmetry.size()) { // If we've reached the bottom, we have a complete move to return
+		if (interchangeableIndex == gameSymmetry.size()) { // If we've reached the bottom, we have a complete move to return
 			Move move = 0; // Start with an empty move
 
-			for (int i = 0; i < gameSymmetry.size(); i++) { // For each interchangable
-				for (int j = 0; j < elements[i]; j++) { // For each element we selected from this interchangable
-					// Shift 1 to the left by the index of the element in the interchangable to get the bitmask for that element and add it to the move
+			for (int i = 0; i < gameSymmetry.size(); i++) { // For each interchangeable
+				for (int j = 0; j < elements[i]; j++) { // For each element we selected from this interchangeable
+					// Shift 1 to the left by the index of the element in the interchangeable to get the bitmask for that element and add it to the move
 					move += 1 << *std::next(gameSymmetry[gameSymmetry.size() - i - 1].begin(), j);
 				}
 			}
@@ -316,16 +303,16 @@ public:
 			}
 			return { move }; // Return this move as a single element vector
 		}
-		else { // Otherwise we need to select how many elements we want from this interchangable and then recursively generate the moves for the next interchangable
+		else { // Otherwise we need to select how many elements we want from this interchangeable and then recursively generate the moves for the next interchangeable
 			std::vector<Move> moves; // A vector to store the generated principal moves
-			size_t interchangableSize = gameSymmetry[gameSymmetry.size() - interchangableIndex - 1].size(); // The number of elements in this interchangable
-			// Note the index here is backwards to make the choice for the last interchangable first and work backwards
+			size_t interchangeableSize = gameSymmetry[gameSymmetry.size() - interchangeableIndex - 1].size(); // The number of elements in this interchangeable
+			// Note the index here is backwards to make the choice for the last interchangeable first and work backwards
 
-			// For each possible number of selected elements from this interchangable (from 0 to all)
-			for (int selectedElements = 0; selectedElements <= interchangableSize; selectedElements++) {
+			// For each possible number of selected elements from this interchangeable (from 0 to all)
+			for (int selectedElements = 0; selectedElements <= interchangeableSize; selectedElements++) {
 				std::vector<int> newElements = elements; // Create a new vector to represent the number of selected elements so far
-				newElements.push_back(selectedElements); // Add the number of selected elements from this interchangable to the vector
-				std::vector<Move> subMoves = principalMoves(interchangableIndex + 1, newElements); // Recursively generate the moves for the next interchangable with the updated selected elements vector
+				newElements.push_back(selectedElements); // Add the number of selected elements from this interchangeable to the vector
+				std::vector<Move> subMoves = principalMoves(interchangeableIndex + 1, newElements); // Recursively generate the moves for the next interchangeable with the updated selected elements vector
 				moves.insert(moves.end(), subMoves.begin(), subMoves.end()); // Add the generated moves to the main list of moves
 			}
 			return moves; // Return the generated moves

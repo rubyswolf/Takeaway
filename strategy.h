@@ -60,7 +60,6 @@ struct MoveTest {
     }
 
     MoveTestWhenBuilder when(const Condition& cond) const;
-    MoveTest such_that(const Condition& cond) const;
 };
 
 struct Condition {
@@ -117,11 +116,9 @@ struct PickedOnMoveNode : ElementTestNode {
 };
 
 struct PickedInAnyNode : ElementTestNode {
-    enum PlayerFilter { AnyPlayer, Me, Opponent } player_filter;
-
     MoveTest test;
 
-    PickedInAnyNode(const MoveTest& test, PlayerFilter player_filter);
+    explicit PickedInAnyNode(const MoveTest& test);
     bool eval(const Game& game, Element element) const override;
 };
 
@@ -148,11 +145,23 @@ struct AnythingNode : MoveTestNode {
     bool eval(const Game& game, Move move) const override;
 };
 
+struct IsLegalMoveNode : MoveTestNode {
+    bool eval(const Game& game, Move move) const override;
+};
+
 struct NothingNode : MoveTestNode {
     bool eval(const Game& game, Move move) const override;
 };
 
 struct EverythingNode : MoveTestNode {
+    bool eval(const Game& game, Move move) const override;
+};
+
+struct IsMyMoveNode : MoveTestNode {
+    bool eval(const Game& game, Move move) const override;
+};
+
+struct IsOpponentsMoveNode : MoveTestNode {
     bool eval(const Game& game, Move move) const override;
 };
 
@@ -257,11 +266,11 @@ struct SelectMoveTestNode : MoveTestNode {
     bool eval(const Game& game, Move move) const override;
 };
 
-struct SuchThatNode : MoveTestNode {
+struct CausesNode : MoveTestNode {
     MoveTest move_test;
     Condition condition;
 
-    SuchThatNode(const MoveTest& move_test, const Condition& condition);
+    CausesNode(const MoveTest& move_test, const Condition& condition);
     bool eval(const Game& game, Move move) const override;
 };
 
@@ -447,11 +456,8 @@ struct Strategy {
 ElementTest picked_on_move(int move_number);
 ElementTest picked_on_move(const IntExpr& move_number);
 ElementTest picked_in_any(const MoveTest& test);
-ElementTest picked_by_me(const MoveTest& test);
-ElementTest picked_by_opponent(const MoveTest& test);
 extern const ElementTest fail;
 extern const ElementTest pass;
-extern const ElementTest is_singleton;
 extern const ElementTest are_singleton;
 ElementTest operator~(const ElementTest& inner);
 ElementTest operator&(const ElementTest& a, const ElementTest& b);
@@ -464,13 +470,17 @@ MoveTest all_but(int n, const ElementTest& test);
 MoveTest all_but(const IntExpr& n, const ElementTest& test);
 MoveTest any_from(int n, const ElementTest& test);
 MoveTest any_from(const IntExpr& n, const ElementTest& test);
+MoveTest causes(const Condition& cond);
 MoveTest operator~(const MoveTest& inner);
 MoveTest operator&(const MoveTest& a, const MoveTest& b);
 MoveTest operator|(const MoveTest& a, const MoveTest& b);
 
 extern const MoveTest anything;
+extern const MoveTest legal;
 extern const MoveTest nothing;
 extern const MoveTest everything;
+extern const MoveTest is_my_move;
+extern const MoveTest is_opponents_move;
 
 extern const Condition TRUE;
 extern const Condition FALSE;
